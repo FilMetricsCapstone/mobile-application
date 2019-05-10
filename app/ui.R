@@ -9,6 +9,8 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
   #----- Sidebar menu items to navigate through the app -----
   dashboardSidebar(collapsed = TRUE,
     sidebarMenu(id = "glenArt", # This name allows button clicks to move throughout the app
+      radioGroupButtons("dashboardLayout", label = "", choices = c("Mobile","Desktop"), selected = "Mobile",
+                        justified = TRUE),
       # Dashboard          
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")), # Icons from https://fontawesome.com/icons?d=gallery
       
@@ -33,29 +35,60 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       #----- Dashboard -----
       # This page...
       tabItem(tabName = "dashboard",
-              h1("Dashboard Stuff Here", align = "center"),
-              div(
-                div(h5("Created by Omer Ahmad, Nick Betzsold, Jeff Grobart, Muthukumar Palani, and Suresh Sabramanian"),
-                    style = "position: absolute; bottom: 5px"),
-                align = "center"
-              )
+        conditionalPanel(
+          condition = "input.dashboardLayout == 'Mobile'",
+          imageOutput("yearTopFive_1", width = "100%"),
+          imageOutput("quarterTopFive_1", width = "100%")
+        ),
+        conditionalPanel(
+          condition = "input.dashboardLayout == 'Desktop'",
+          fluidRow(
+            column(imageOutput("yearTopFive_2", width = "100%"), width = 6),
+            column(imageOutput("quarterTopFive_2", width = "100%"), width = 6)
+          )
+        )
       ),
       
       #----- Analytics -----
       # This page...
       tabItem(tabName = "analytics",
-              h1("Detailed Analytics Stuff Here", align = "center")
+        conditionalPanel(
+          condition = "input.dashboardLayout == 'Mobile'",
+          imageOutput("donut_1", width = "100%"),
+          imageOutput("bar_1", width = "100%")
+        ),
+        conditionalPanel(
+          condition = "input.dashboardLayout == 'Desktop'",
+          fluidRow(
+            column(imageOutput("donut_2", width = "100%"), width = 6),
+            column(imageOutput("bar_2", width = "100%"), width = 6)
+          )
+        )
       ),
       
       #----- Screen Optimization -----
       # This page...
       tabItem(tabName = "scheduler",
-              h1("Optimization Tool Here", align = "center")
+        conditionalPanel(
+          condition = "input.dashboardLayout == 'Mobile'",
+          imageOutput("gantt_screen_schedule_1", width = "100%")
+        ),
+        conditionalPanel(
+          condition = "input.dashboardLayout == 'Desktop'",
+          fluidRow(
+            column(imageOutput("gantt_screen_schedule_2", width = "100%"), width = 12)
+          )
+        )
       ),
       
       #----- Overview (README) -----
       tabItem(tabName = "overview",
-              h1("User's Guide Stuff Here", align = "center")
+              h1("User's Guide Stuff Here", align = "center"),
+              div(
+                div(h5("Created by Omer Ahmad, Nick Betzsold, Jeff Grobart, Muthukumar Palani, and Suresh Sabramanian"),
+                    style = "position: absolute; bottom: 5px"),
+                align = "center"
+              )
       )
     )
   )
