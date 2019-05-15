@@ -35,50 +35,61 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       #----- Dashboard -----
       # This page...
       tabItem(tabName = "dashboard",
-        conditionalPanel(
-          condition = "input.dashboardLayout == 'Mobile'",
-          imageOutput("yearTopFive_1", width = "100%"),
-          imageOutput("quarterTopFive_1", width = "100%")
-        ),
-        conditionalPanel(
-          condition = "input.dashboardLayout == 'Desktop'",
-          fluidRow(
-            column(imageOutput("yearTopFive_2", width = "100%"), width = 6),
-            column(imageOutput("quarterTopFive_2", width = "100%"), width = 6)
-          )
-        )
+              conditionalPanel(
+                condition = "input.dashboardLayout == 'Mobile'",
+                valueBoxOutput("topWeek_1", width = "100%"),
+                tableOutput("topWeek_T1"),
+                valueBoxOutput("topMonth_1", width = "100%"),
+                tableOutput("topMonth_T1"),
+                valueBoxOutput("topQuarter_1", width = "100%"),
+                tableOutput("topQuarter_T1")
+              ),
+              conditionalPanel(
+                condition = "input.dashboardLayout == 'Desktop'",
+                fluidRow(
+                  column(width = 4,
+                         valueBoxOutput("topWeek_2", width = NULL),
+                         tableOutput("topWeek_T2")),
+                  column(width = 4,
+                         valueBoxOutput("topMonth_2", width = NULL),
+                         tableOutput("topMonth_T2")),
+                  column(width = 4,
+                         valueBoxOutput("topQuarter_2", width = NULL),
+                         tableOutput("topQuarter_T2"))
+                )
+              )
       ),
       
       #----- Analytics -----
       # This page...
-      tabItem(tabName = "analytics",
-        conditionalPanel(
-          condition = "input.dashboardLayout == 'Mobile'",
-          imageOutput("donut_1", width = "100%"),
-          imageOutput("bar_1", width = "100%")
-        ),
-        conditionalPanel(
-          condition = "input.dashboardLayout == 'Desktop'",
-          fluidRow(
-            column(imageOutput("donut_2", width = "100%"), width = 6),
-            column(imageOutput("bar_2", width = "100%"), width = 6)
-          )
-        )
+      tabItem(tabName = "analytics"#,
+        # conditionalPanel(
+        #   condition = "input.dashboardLayout == 'Mobile'",
+        #   imageOutput("donut_1", width = "100%"),
+        #   imageOutput("bar_1", width = "100%")
+        # ),
+        # conditionalPanel(
+        #   condition = "input.dashboardLayout == 'Desktop'",
+        #   fluidRow(
+        #     column(imageOutput("donut_2", width = "100%"), width = 6),
+        #     column(imageOutput("bar_2", width = "100%"), width = 6)
+        #   )
+        # )
       ),
       
       #----- Screen Optimization -----
       # This page...
-      tabItem(tabName = "scheduler",
-        conditionalPanel(
-          condition = "input.dashboardLayout == 'Mobile'",
-          imageOutput("gantt_screen_schedule_1", width = "100%")
-        ),
-        conditionalPanel(
-          condition = "input.dashboardLayout == 'Desktop'",
-          fluidRow(
-            column(imageOutput("gantt_screen_schedule_2", width = "100%"), width = 12)
-          )
-        )
+      tabItem(tabName = "scheduler"#,
+        # conditionalPanel(
+        #   condition = "input.dashboardLayout == 'Mobile'",
+        #   imageOutput("gantt_screen_schedule_1", width = "100%")
+        # ),
+        # conditionalPanel(
+        #   condition = "input.dashboardLayout == 'Desktop'",
+        #   fluidRow(
+        #     column(imageOutput("gantt_screen_schedule_2", width = "100%"), width = 12)
+        #   )
+        # )
       ),
       
       #----- Overview (README) -----
