@@ -35,14 +35,14 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       tabItem(tabName = "dashboard",
               fluidRow(
                 column(width = 6,
-                  tabBox(width = NULL,
-                    tabPanel("Domestic", "Barplot US vs Glen Art"), #plotOutput("compWMQ", width = NULL)
-                    tabPanel("International", "Barplot International vs Glen Art"),
-                    tabPanel("Global", "Barplot Global vs Glen Art")
-                  )
+                  box(title = "% Annual Target to Date", plotOutput("donut"), width = NULL)
                 ),
                 column(width = 6,
-                  box(title = "% Annual Target to Date", plotOutput("donut"), width = NULL)
+                  tabBox(width = NULL,
+                    tabPanel("Domestic", plotOutput("compD")),
+                    tabPanel("International", plotOutput("compI")),
+                    tabPanel("Global", plotOutput("compG"))
+                  )
                 )
               ),
               fluidRow(

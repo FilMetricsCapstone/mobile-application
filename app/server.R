@@ -9,10 +9,19 @@ server <- function(input, output, session) {
   
   #----- Dashboard -----
   # Box 1 - Domestic
+  output$compD <- renderPlot({
+    plotCompBarplot("domestic")
+  })
   
   # Box 1 - International
+  output$compI <- renderPlot({
+    plotCompBarplot("international")
+  })
   
   # Box 1 - Global
+  output$compG <- renderPlot({
+    plotCompBarplot("global")
+  })
   
   # Box 2 - Donut
   output$donut <- renderPlot({
