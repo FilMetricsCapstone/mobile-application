@@ -2,25 +2,38 @@
 #------------------------------------------------
 
 server <- function(input, output, session) {
-  # values <- reactiveValues(wBO = getBoxOffice("w"),
-  #                          mBO = getBoxOffice("m"),
-  #                          qBO = getBoxOffice("q"))
+  reloadData <- reactiveTimer(216000000, session)
+  
+  wBO <- reactive({
+    reloadData()
+    getBoxOffice("w")
+  })
+
+  mBO <- reactive({
+    reloadData()
+    getBoxOffice("m")
+  })
+
+  qBO <- reactive({
+    reloadData()
+    getBoxOffice("q")
+  })
   
   
   #----- Dashboard -----
   # Box 1 - Domestic
   output$compD <- renderPlot({
-    plotCompBarplot("domestic")
+    plotCompBarplot(wBO(), mBO(), qBO(), "domestic")
   })
   
   # Box 1 - International
   output$compI <- renderPlot({
-    plotCompBarplot("international")
+    plotCompBarplot(wBO(), mBO(), qBO(), "international")
   })
   
   # Box 1 - Global
   output$compG <- renderPlot({
-    plotCompBarplot("global")
+    plotCompBarplot(wBO(), mBO(), qBO(), "global")
   })
   
   # Box 2 - Donut
@@ -56,76 +69,158 @@ server <- function(input, output, session) {
   
   # Box 3 - Week
   output$moviesW <- renderPlot({
-    plotMoviePareto(wBO)
+    plotMoviePareto(wBO())
   })
   
   # Box 3 - Month
   output$moviesM <- renderPlot({
-    plotMoviePareto(mBO)
+    plotMoviePareto(mBO())
   })
   
   # Box 3 - Quarter
   output$moviesQ <- renderPlot({
-    plotMoviePareto(qBO)
+    plotMoviePareto(qBO())
   })
-  
-  
-  # Top Week
-  output$topWeek <- renderValueBox({
-    valueBox(
-      value = "This Week",
-      subtitle = "Projected Earnings",
-      icon = icon("dollar"),
-      color = "green"
-    )
-  })
-  
-  output$topWeek_T <- renderTable({
-    data.frame(
-      Rank = 1:5,
-      Title = c("Avengers: Endgame", "The Intruder (2019)", "Long Shot", "Uglydolls", "Captain Marvel"),
-      Gross = c("$186,551,101", "$14,375,126", "$13,611,935", "$10,360,796", "$5,472,061")
-    )
-  }, width = "100%")
-  
-  # Top Month
-  output$topMonth <- renderValueBox({
-    valueBox(
-      value = "This Month",
-      subtitle = "Projected Earnings",
-      icon = icon("dollar"),
-      color = "green"
-    )
-  })
-  
-  output$topMonth_T <- renderTable({
-    data.frame(
-      Rank = 1:5,
-      Title = c("Avengers: Endgame", "Shazam!", "Pet Sematary (2019)", "The Curse of La Llorona", "Little"),
-      Gross = c("$728,447,735", "$137,175,154", "$54,269,143", "$51,623,137", "$39,759,470")
-    )
-  }, width = "100%")
-  
-  # Top Quarter
-  output$topQuarter <- renderValueBox({
-    valueBox(
-      value = "This Quarter",
-      subtitle = "Projected Earnings",
-      icon = icon("dollar"),
-      color = "green"
-    )
-  })
-  
-  output$topQuarter_T <- renderTable({
-    data.frame(
-      Rank = 1:5,
-      Title = c("Avengers: Endgame", "Shazam!", "Pokemon Detective Pikachu", "Pet Sematary (2019)", "The Curse of La Llorona"),
-      Gross = c("$728,447,735", "$137,175,154", "$58,058,457", "$54,269,143", "$51,623,137")
-    )
-  }, width = "100%")
   
   #----- Analytics -----
+  # Prediction Tab
+  output$predFilms_UI <- renderUI({
+    if (input$predQuarter == "Q3") {
+      selectInput("predFilms", "Select Film(s) to View", multiple = TRUE,
+                  choices = list(
+                    "July" = c("Spider-Man: Far From Home", "The Lion King", "Once Upon a Time in Hollywood"),
+                    "August" = c("Hobbs and Shaw", "Dora and the Lost City of Gold", "The Angry Birds Movie 2"),
+                    "September" = c("IT Chapter Two", "Downton Abbey", "Rambo: Last")))
+    } else {
+      selectInput("predFilms", "Select Film(s) to View", multiple = TRUE,
+                  choices = list(
+                    "October" = c("Joker", "Zombieland 2", "Gemini Man", "The Addams Family", "Maleficent: Mistress of Evil"),
+                    "November" = c("Terminator: Dark Fate", "Sonic the Hedgehog", "Charlie's Angels", "Frozen 2"),
+                    "December" = c("Jumanji Sequel", "Star Wars: The Rise of Skywalker", "Spies in Disguise")))
+    }
+  })
   
+  output$predGross <- renderPlot({
+    x <- seq(as.POSIXct(input$predDates[1]), as.POSIXct(input$predDates[2]), by = "hour")
+    y <- runif(length(x), 500000, 1000000)
+    z <- data.frame(x = x, y = y, stringsAsFactors = FALSE)
+    
+    ggplot(z, aes(x = x, y = y)) + geom_line() +
+      xlab("Date") + ylab("Gross") + 
+      scale_y_continuous(labels = scales::dollar) +
+      theme_bw() +
+      theme(axis.title = element_text(face = "bold", size = 16),
+            axis.text = element_text(size = 12))
+  })
+  
+  output$predLifecycle <- renderPlot({
+    x <- 1:100
+    y <- c()
+    for (i in 1:length(input$predFilms)) {
+      y <- cbind(y, runif(100, 500000, 1000000))
+    }
+    z <- data.frame(x, y, stringsAsFactors = FALSE)
+    colnames(z)[2:(ncol(z))] <- input$predFilms
+    z <- reshape2::melt(z, id.vars = "x", value.name = "y")
+    
+    ggplot(z, aes(x = x, y = y, color = variable)) + geom_line() +
+      xlab("Time") + ylab("Gross") + 
+      scale_y_continuous(labels = scales::dollar) +
+      theme_bw() +
+      theme(axis.title = element_text(face = "bold", size = 16),
+            axis.text = element_text(size = 12),
+            legend.title = element_text(face = "bold", size = 16),
+            legend.text = element_text(size = 12))
+  })
+  
+  # Historical Tab
+  output$histComparison <- renderPlot({
+    if (input$histTime == "Last Week") {
+      x <- rep(seq(lubridate::floor_date(Sys.Date(), unit = "w", week_start = 5), Sys.Date()-1, by = "d"), each = 2)
+      w <- rep(c("Projected", "Actual"), length(x)/2)
+      y <- runif(length(x), 500000, 1000000)
+      z <- data.frame(x,w,y,stringsAsFactors = FALSE)
+      
+      ggplot(z, aes(x = x, y = y, color = w)) + geom_line() +
+        xlab("Date") + ylab("Gross") + 
+        scale_y_continuous(labels = scales::dollar) +
+        theme_bw() +
+        theme(axis.title = element_text(face = "bold", size = 16),
+              axis.text = element_text(size = 12),
+              legend.title = element_blank(),
+              legend.text = element_text(size = 12))
+    } else if (input$histTime == "Last Month") {
+      x <- rep(seq(lubridate::floor_date(Sys.Date(), unit = "m"), Sys.Date()-1, by = "d"), each = 2)
+      w <- rep(c("Projected", "Actual"), length(x)/2)
+      y <- runif(length(x), 500000, 1000000)
+      z <- data.frame(x,w,y,stringsAsFactors = FALSE)
+      
+      ggplot(z, aes(x = x, y = y, color = w)) + geom_line() +
+        xlab("Date") + ylab("Gross") + 
+        scale_y_continuous(labels = scales::dollar) +
+        theme_bw() +
+        theme(axis.title = element_text(face = "bold", size = 16),
+              axis.text = element_text(size = 12),
+              legend.title = element_blank(),
+              legend.text = element_text(size = 12))
+    } else {
+      x <- rep(seq(lubridate::floor_date(Sys.Date(), unit = "q"), Sys.Date()-1, by = "d"), each = 2)
+      w <- rep(c("Projected", "Actual"), length(x)/2)
+      y <- runif(length(x), 500000, 1000000)
+      z <- data.frame(x,w,y,stringsAsFactors = FALSE)
+      
+      ggplot(z, aes(x = x, y = y, color = w)) + geom_line() +
+        xlab("Date") + ylab("Gross") + 
+        scale_y_continuous(labels = scales::dollar) +
+        theme_bw() +
+        theme(axis.title = element_text(face = "bold", size = 16),
+              axis.text = element_text(size = 12),
+              legend.title = element_blank(),
+              legend.text = element_text(size = 12))
+    }
+  })
+  
+  # Raw Data Tab
+  output$fmDT <- DT::renderDT(df, options = list(scrollX = TRUE))
+
+  output$cwDT <- DT::renderDT({
+    wBO() %>% dplyr::group_by(movie) %>%
+      dplyr::summarize(distributor = unique(distributor)[1],
+                       gross = sum(gross),
+                       percent_change = unique(percent_change)[1],
+                       theaters = sum(theaters),
+                       per_theater = sum(per_theater),
+                       total_gross = sum(total_gross),
+                       days = max(days, na.rm = TRUE),
+                       date = max(date, na.rm = TRUE)) %>%
+      dplyr::filter(!is.na(movie))
+  }, options = list(scrollX = TRUE))
+
+  output$cmDT <- DT::renderDT({
+    mBO() %>% dplyr::group_by(movie) %>%
+      dplyr::summarize(distributor = unique(distributor)[1],
+                       gross = sum(gross),
+                       percent_change = unique(percent_change)[1],
+                       theaters = sum(theaters),
+                       per_theater = sum(per_theater),
+                       total_gross = sum(total_gross),
+                       days = max(days, na.rm = TRUE),
+                       date = max(date, na.rm = TRUE)) %>%
+      dplyr::filter(!is.na(movie))
+  }, options = list(scrollX = TRUE))
+
+  output$cqDT <- DT::renderDT({
+    qBO() %>% dplyr::group_by(movie) %>%
+      dplyr::summarize(distributor = unique(distributor)[1],
+                       gross = sum(gross),
+                       percent_change = unique(percent_change)[1],
+                       theaters = sum(theaters),
+                       per_theater = sum(per_theater),
+                       total_gross = sum(total_gross),
+                       days = max(days, na.rm = TRUE),
+                       date = max(date, na.rm = TRUE)) %>%
+      dplyr::filter(!is.na(movie))
+  }, options = list(scrollX = TRUE))
   
   #----- Screen Optimization -----
   

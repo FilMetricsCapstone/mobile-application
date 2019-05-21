@@ -58,7 +58,87 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       
       #----- Analytics -----
       # This page...
-      tabItem(tabName = "analytics"
+      tabItem(tabName = "analytics",
+        tabsetPanel(
+          tabPanel(title = "Predictive",
+            fluidRow(
+              column(width = 3,
+                box(title = "Inputs", collapsible = TRUE, width = NULL,
+                    selectInput("predMetric", "Select Forecast Method",
+                                choices = c("Predicted Gross", "Film Lifecycle")),
+                    conditionalPanel(
+                      condition = "input.predMetric == 'Predicted Gross'",
+                      dateRangeInput("predDates", "Select Date to Forecast", start = as.character(Sys.Date()+1),
+                                     end = as.character(Sys.Date()+7), min = as.character(Sys.Date()+1), weekstart = 5)
+                    ),
+                    conditionalPanel(
+                      condition = "input.predMetric == 'Film Lifecycle'",
+                      radioButtons("predQuarter", "Select Quarter", c("Q3", "Q4")),
+                      uiOutput("predFilms_UI")
+                    )
+                )
+              ),
+              column(width = 9,
+                box(title = "Predictive Visuals", collapsible = TRUE, width = NULL,
+                    conditionalPanel(
+                      condition = "input.predMetric == 'Predicted Gross'",
+                      plotOutput("predGross")
+                    ),
+                    conditionalPanel(
+                      condition = "input.predMetric == 'Film Lifecycle'",
+                      plotOutput("predLifecycle")
+                    )
+                )
+              )
+            )
+          ),
+          tabPanel(title = "Historical",
+            fluidRow(
+              column(width = 3,
+                box(title = "Inputs", collapsible = TRUE, width = NULL,
+                    selectInput("histTime", "Select Timeframe", choices = c("Last Week", "Last Month", "Last Quarter"))
+                )
+              ),
+              column(width = 9,
+                box(title = "Historical Visual", collapsible = TRUE, width = NULL,
+                    plotOutput("histComparison")
+                )
+              )
+            )
+          ),
+          tabPanel(title = "Raw Data",
+            fluidRow(
+              column(width = 3,
+                box(title = "Inputs", collapsible = TRUE, width = NULL,
+                    selectInput("dataset", "Select Data Set to View", list(
+                      "FilMetrics" = c("FilMetrics Data"),
+                      "The-Numbers.com" = c("Current Week", "Current Month", "Current Quarter")
+                    ))
+                )
+              ),
+              column(width = 9,
+                box(title = "Data Table", collapsible = TRUE, width = NULL,
+                    conditionalPanel(
+                      condition = "input.dataset == 'FilMetrics Data'",
+                      DT::DTOutput("fmDT")
+                    ),
+                    conditionalPanel(
+                      condition = "input.dataset == 'Current Week'",
+                      DT::DTOutput("cwDT")
+                    ),
+                    conditionalPanel(
+                      condition = "input.dataset == 'Current Month'",
+                      DT::DTOutput("cmDT")
+                    ),
+                    conditionalPanel(
+                      condition = "input.dataset == 'Current Quarter'",
+                      DT::DTOutput("cqDT")
+                    )
+                  )
+                )
+              )
+            )
+          )
       ),
       
       #----- Screen Optimization -----

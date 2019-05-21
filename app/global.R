@@ -2,17 +2,20 @@
 #---------------------------------------------------------------------
 
 #----- Needed Libraries -----
+library(boxoffice)
 library(dplyr)
 library(ggplot2)
+library(lubridate)
 library(shiny)
 library(shinydashboard)
 library(timevis)
 
 #----- Global Variables -----
-# # Final Model Data Set
-# df <- read.csv("data/Final_Model_data.csv"); df <- df[,-c(1,3,4,12)]
+# Final Model Data Set
+df <- read.csv("data/Final_Model_data.csv"); df <- df[,-1]
+# df <- df[,-c(1,3,4,12)]
 # df <- df[!(df$budget < 1000 | df$revenue < 1000),]
-# 
+
 # # Ticket Prices
 # tix_mat <- 5
 # tix_reg <- 7
@@ -33,9 +36,9 @@ getBoxOffice <- function(type) {
   return(out)
 }
 
-wBO <- getBoxOffice("w")
-mBO <- getBoxOffice("m")
-qBO <- getBoxOffice("q")
+# wBO <- getBoxOffice("w")
+# mBO <- getBoxOffice("m")
+# qBO <- getBoxOffice("q")
 
 plotMoviePareto <- function(dat) {
   # Manipulate data
@@ -59,10 +62,10 @@ plotMoviePareto <- function(dat) {
   return(g)
 }
 
-plotCompBarplot <- function(x) {
-  wBO1 <- sum(wBO$gross[!is.na(wBO$gross)])
-  mBO1 <- sum(mBO$gross[!is.na(mBO$gross)])
-  qBO1 <- sum(qBO$gross[!is.na(qBO$gross)])
+plotCompBarplot <- function(w, m, q, x) {
+  wBO1 <- sum(w$gross[!is.na(w$gross)])
+  mBO1 <- sum(m$gross[!is.na(m$gross)])
+  qBO1 <- sum(q$gross[!is.na(q$gross)])
   dat <- data.frame(stringsAsFactors = FALSE,
                     time = rep(c("Week", "Month", "Quarter"), each = 6),
                     type = rep(rep(c("domestic", "international", "global"), each = 2), 3),
