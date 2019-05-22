@@ -3,7 +3,7 @@
 
 server <- function(input, output, session) {
   reloadData <- reactiveTimer(216000000, session)
-  
+
   wBO <- reactive({
     reloadData()
     getBoxOffice("w")
@@ -18,7 +18,6 @@ server <- function(input, output, session) {
     reloadData()
     getBoxOffice("q")
   })
-  
   
   #----- Dashboard -----
   # Box 1 - Domestic
@@ -223,7 +222,21 @@ server <- function(input, output, session) {
   }, options = list(scrollX = TRUE))
   
   #----- Screen Optimization -----
+  output$availableFilms_UI <- renderTable({
+    mdb <- movieDB[movieDB$startDate < input$schedDate & movieDB$endDate > input$schedDate, "film", drop = FALSE]
+    colnames(mdb) <- "Available Films"
+    mdb
+  })
   
+  output$optSchedule <- renderTimevis({
+    if (input$optimize == 0)
+      return()
+    
+    os <- isolate({
+      optimizeShowtimes(input$schedDate, input$firstShow, input$lastShow, input$interval, input$screens, input$allShown)
+    })
+    timevis(data = os, groups = groupsData, options = list(showCurrentTime = FALSE))
+  })
   
   #----- Overview (README) ------
   

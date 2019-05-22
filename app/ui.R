@@ -64,16 +64,16 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
             fluidRow(
               column(width = 3,
                 box(title = "Inputs", collapsible = TRUE, width = NULL,
-                    selectInput("predMetric", "Select Forecast Method",
+                    selectInput("predMetric", "Forecast Method:",
                                 choices = c("Predicted Gross", "Film Lifecycle")),
                     conditionalPanel(
                       condition = "input.predMetric == 'Predicted Gross'",
-                      dateRangeInput("predDates", "Select Date to Forecast", start = as.character(Sys.Date()+1),
+                      dateRangeInput("predDates", "Forecast Date:", start = as.character(Sys.Date()+1),
                                      end = as.character(Sys.Date()+7), min = as.character(Sys.Date()+1), weekstart = 5)
                     ),
                     conditionalPanel(
                       condition = "input.predMetric == 'Film Lifecycle'",
-                      radioButtons("predQuarter", "Select Quarter", c("Q3", "Q4")),
+                      radioButtons("predQuarter", "Quarter:", c("Q3", "Q4")),
                       uiOutput("predFilms_UI")
                     )
                 )
@@ -96,7 +96,7 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
             fluidRow(
               column(width = 3,
                 box(title = "Inputs", collapsible = TRUE, width = NULL,
-                    selectInput("histTime", "Select Timeframe", choices = c("Last Week", "Last Month", "Last Quarter"))
+                    selectInput("histTime", "Time Period:", choices = c("Last Week", "Last Month", "Last Quarter"))
                 )
               ),
               column(width = 9,
@@ -110,7 +110,7 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
             fluidRow(
               column(width = 3,
                 box(title = "Inputs", collapsible = TRUE, width = NULL,
-                    selectInput("dataset", "Select Data Set to View", list(
+                    selectInput("dataset", "Data Set to View:", list(
                       "FilMetrics" = c("FilMetrics Data"),
                       "The-Numbers.com" = c("Current Week", "Current Month", "Current Quarter")
                     ))
@@ -143,7 +143,31 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       
       #----- Screen Optimization -----
       # This page...
-      tabItem(tabName = "scheduler"
+      tabItem(tabName = "scheduler",
+        fluidRow(
+          column(width = 3,
+            box(title = "Inputs", collapsible = TRUE, width = NULL,
+                dateInput("schedDate", "Date to Schedule:", value = Sys.Date(),
+                          min = Sys.Date(), max = max(movieDB$endDate)),
+                tableOutput("availableFilms_UI"),
+                timeInput("firstShow", "Earliest Start Time:", value = strptime("11:00:00", "%T"),
+                          seconds = FALSE),
+                timeInput("lastShow", "Latest Finish Time:", value = strptime("00:30:00", "%T"),
+                          seconds = FALSE),
+                numericInput("interval", "Interval Between Start Times (min)", value = 5,
+                             min = 1, max = 60, step = 1),
+                numericInput("screens", "Available Screens", value = 4, min = 1, max = 4, step = 1),
+                numericInput("allShown", "Minimum # Showings per Film", value = 1, min = 0, max = 2)
+            )
+          ),
+          column(width = 9,
+            actionButton("optimize", "Schedule", icon = icon("clock")),
+            br(),br(),
+            box(title = "Optimal Schedule", collapsible = TRUE, width = NULL,
+                timevisOutput("optSchedule")
+            )
+          )
+        )        
       ),
       
       #----- Overview (README) -----
