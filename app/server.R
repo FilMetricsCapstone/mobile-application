@@ -6,17 +6,17 @@ server <- function(input, output, session) {
 
   wBO <- reactive({
     reloadData()
-    getBoxOffice("w")
+    weekScraper()
   })
 
   mBO <- reactive({
     reloadData()
-    getBoxOffice("m")
+    monthScraper()
   })
 
   qBO <- reactive({
     reloadData()
-    getBoxOffice("q")
+    quarterScraper()
   })
   
   #----- Dashboard -----
@@ -135,48 +135,44 @@ server <- function(input, output, session) {
   # Historical Tab
   output$histComparison <- renderPlot({
     if (input$histTime == "Last Week") {
-      x <- rep(seq(lubridate::floor_date(Sys.Date(), unit = "w", week_start = 5), Sys.Date()-1, by = "d"), each = 2)
-      w <- rep(c("Projected", "Actual"), length(x)/2)
-      y <- runif(length(x), 500000, 1000000)
-      z <- data.frame(x,w,y,stringsAsFactors = FALSE)
-      
-      ggplot(z, aes(x = x, y = y, color = w)) + geom_line() +
-        xlab("Date") + ylab("Gross") + 
-        scale_y_continuous(labels = scales::dollar) +
-        theme_bw() +
-        theme(axis.title = element_text(face = "bold", size = 16),
-              axis.text = element_text(size = 12),
-              legend.title = element_blank(),
-              legend.text = element_text(size = 12))
+      x <- rep(seq(floor_date(Sys.Date()-7, unit = "w", week_start = 5),
+                   floor_date(Sys.Date(), unit = "w", week_start = 5), by = "d"),
+               each = 2)
     } else if (input$histTime == "Last Month") {
-      x <- rep(seq(lubridate::floor_date(Sys.Date(), unit = "m"), Sys.Date()-1, by = "d"), each = 2)
-      w <- rep(c("Projected", "Actual"), length(x)/2)
-      y <- runif(length(x), 500000, 1000000)
-      z <- data.frame(x,w,y,stringsAsFactors = FALSE)
-      
-      ggplot(z, aes(x = x, y = y, color = w)) + geom_line() +
-        xlab("Date") + ylab("Gross") + 
-        scale_y_continuous(labels = scales::dollar) +
-        theme_bw() +
-        theme(axis.title = element_text(face = "bold", size = 16),
-              axis.text = element_text(size = 12),
-              legend.title = element_blank(),
-              legend.text = element_text(size = 12))
+      x <- rep(seq(floor_date(Sys.Date()-day(Sys.Date())-1, unit = "m"),
+                   rollback(Sys.Date()), by = "d"),
+               each = 2)
     } else {
-      x <- rep(seq(lubridate::floor_date(Sys.Date(), unit = "q"), Sys.Date()-1, by = "d"), each = 2)
-      w <- rep(c("Projected", "Actual"), length(x)/2)
-      y <- runif(length(x), 500000, 1000000)
-      z <- data.frame(x,w,y,stringsAsFactors = FALSE)
-      
-      ggplot(z, aes(x = x, y = y, color = w)) + geom_line() +
-        xlab("Date") + ylab("Gross") + 
-        scale_y_continuous(labels = scales::dollar) +
-        theme_bw() +
-        theme(axis.title = element_text(face = "bold", size = 16),
-              axis.text = element_text(size = 12),
-              legend.title = element_blank(),
-              legend.text = element_text(size = 12))
+      x <- rep(seq(floor_date(Sys.Date()-months(3), unit = "q"),
+                   rollback(ceiling_date(Sys.Date()-months(3), unit = "q")), by = "d"),
+               each = 2)
     }
+    w <- rep(c("Projected", "Actual"), length(x)/2); w <- factor(w, levels = c("Projected", "Actual"))
+    z <- data.frame(x, w, stringsAsFactors = FALSE)
+    wg <- round(rnorm(1, 250000, 33333))
+    y <- c()
+    for (i in 1:nrow(z)) {
+      y <- c(y,
+             round(ifelse(wday(z$x[i]) == 1, wg*rnorm(1,.18,.03),
+                   ifelse(wday(z$x[i]) == 2, wg*rnorm(1,.07,.02),
+                   ifelse(wday(z$x[i]) == 2, wg*rnorm(1,.06,.02),
+                   ifelse(wday(z$x[i]) == 2, wg*rnorm(1,.07,.02),
+                   ifelse(wday(z$x[i]) == 2, wg*rnorm(1,.19,.03),
+                   ifelse(wday(z$x[i]) == 2, wg*rnorm(1,.21,.04),
+                   wg*rnorm(1,.22,.04))))))))
+      )
+    }
+    z <- data.frame(z, y, stringsAsFactors = FALSE)
+      
+    ggplot(z, aes(x = x, y = y, color = w)) + geom_line(size = 2) +
+      xlab("Date") + ylab("Boxoffice Gross") + 
+      scale_y_continuous(labels = scales::dollar) +
+      theme_bw() +
+      scale_color_manual(values = c("lightsteelblue1", "mediumpurple3"), name = "") +
+      theme(axis.title = element_text(face = "bold", size = 16),
+            axis.text = element_text(size = 12),
+            legend.title = element_blank(),
+            legend.text = element_text(size = 12))
   })
   
   # Raw Data Tab
@@ -185,45 +181,42 @@ server <- function(input, output, session) {
   output$cwDT <- DT::renderDT({
     wBO() %>% dplyr::group_by(movie) %>%
       dplyr::summarize(distributor = unique(distributor)[1],
-                       gross = sum(gross),
-                       percent_change = unique(percent_change)[1],
-                       theaters = sum(theaters),
-                       per_theater = sum(per_theater),
-                       total_gross = sum(total_gross),
-                       days = max(days, na.rm = TRUE),
-                       date = max(date, na.rm = TRUE)) %>%
+                       gross = sum(gross, na.rm = TRUE),
+                       percent_change = unique(rev(change))[1],
+                       theaters = sum(thtrs.),
+                       per_theater = sum(`per thtr.`, na.rm = TRUE),
+                       total_gross = sum(`total gross`, na.rm = TRUE),
+                       weeks = max(week, na.rm = TRUE)) %>%
       dplyr::filter(!is.na(movie))
   }, options = list(scrollX = TRUE))
 
   output$cmDT <- DT::renderDT({
     mBO() %>% dplyr::group_by(movie) %>%
       dplyr::summarize(distributor = unique(distributor)[1],
-                       gross = sum(gross),
-                       percent_change = unique(percent_change)[1],
-                       theaters = sum(theaters),
-                       per_theater = sum(per_theater),
-                       total_gross = sum(total_gross),
-                       days = max(days, na.rm = TRUE),
-                       date = max(date, na.rm = TRUE)) %>%
+                       gross = sum(gross, na.rm = TRUE),
+                       percent_change = unique(rev(change))[1],
+                       theaters = sum(thtrs.),
+                       per_theater = sum(`per thtr.`, na.rm = TRUE),
+                       total_gross = sum(`total gross`, na.rm = TRUE),
+                       weeks = max(week, na.rm = TRUE)) %>%
       dplyr::filter(!is.na(movie))
   }, options = list(scrollX = TRUE))
 
   output$cqDT <- DT::renderDT({
     qBO() %>% dplyr::group_by(movie) %>%
       dplyr::summarize(distributor = unique(distributor)[1],
-                       gross = sum(gross),
-                       percent_change = unique(percent_change)[1],
-                       theaters = sum(theaters),
-                       per_theater = sum(per_theater),
-                       total_gross = sum(total_gross),
-                       days = max(days, na.rm = TRUE),
-                       date = max(date, na.rm = TRUE)) %>%
+                       gross = sum(gross, na.rm = TRUE),
+                       percent_change = unique(rev(change))[1],
+                       theaters = sum(thtrs.),
+                       per_theater = sum(`per thtr.`, na.rm = TRUE),
+                       total_gross = sum(`total gross`, na.rm = TRUE),
+                       weeks = max(week, na.rm = TRUE)) %>%
       dplyr::filter(!is.na(movie))
   }, options = list(scrollX = TRUE))
   
   #----- Screen Optimization -----
   output$availableFilms_UI <- renderTable({
-    mdb <- movieDB[movieDB$startDate < input$schedDate & movieDB$endDate > input$schedDate, "film", drop = FALSE]
+    mdb <- movieDB[movieDB$startDate <= input$schedDate & movieDB$endDate >= input$schedDate, "film", drop = FALSE]
     colnames(mdb) <- "Available Films"
     mdb
   })

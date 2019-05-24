@@ -2,10 +2,10 @@
 #---------------------------------------------------------------------
 
 #----- Needed Libraries -----
-library(boxoffice)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(rvest)
 library(shiny)
 library(shinydashboard)
 library(shinyTime)
@@ -28,19 +28,119 @@ groupsData <- data.frame(id = 1:4,
                          content = c("Screen 1", "Screen 2", "Screen 3", "Screen 4"))
 
 #----- Global Functions -----
-getBoxOffice <- function(type) {
-  # Grab dates
-  if (type == "w") {
-    lu <- seq(lubridate::floor_date(Sys.Date(), unit = "w", week_start = 5), Sys.Date()-1, by = "d")
-  } else if (type == "m") {
-    lu <- seq(lubridate::floor_date(Sys.Date(), unit = "m"), Sys.Date()-1, by = "d")
-  } else {
-    lu <- seq(lubridate::floor_date(Sys.Date(), unit = "q"), Sys.Date()-1, by = "d")
+# Data
+weekScraper <- function() {
+  urlW <- "https://www.the-numbers.com/box-office-chart/weekly/"
+  lu <- format(floor_date(Sys.Date()-7, unit = "w", week_start = 5), format = "%Y/%m/%d")
+  testW <- paste0(urlW, lu) %>% read_html() %>% html_nodes(xpath='//*[@id="page_filling_chart"]/center[1]/table') %>% html_table()
+  testW <- testW[[1]][,-c(1:2)]
+  if (nrow(testW) < 1) {
+    lu <- format(floor_date(ymd("2019-05-24")-8, unit = "w", week_start = 5),
+                 format = "%Y/%m/%d")
+    testW <- paste0(urlW, lu) %>% read_html() %>% html_nodes(xpath='//*[@id="page_filling_chart"]/center[1]/table') %>% html_table()
+    testW <- testW[[1]][,-c(1:2)]
   }
+  testW$Gross <- as.numeric(gsub("[$,]", "", testW$Gross))
+  testW$Change <- as.numeric(gsub("[+%]", "", testW$Change))
+  testW$Thtrs. <- as.numeric(gsub("[,]", "", testW$Thtrs.))
+  testW$`Per Thtr.` <- as.numeric(gsub("[$,]", "", testW$`Per Thtr.`))
+  testW$`Total Gross` <- as.numeric(gsub("[$,]", "", testW$`Total Gross`))
+  colnames(testW) <- tolower(colnames(testW))
+  return(testW)
+}
+
+monthScraper <- function() {
+  urlM <- "https://www.the-numbers.com/box-office-chart/weekly/"
+  lu <- seq(floor_date(Sys.Date()-28, unit = "w", week_start = 5), Sys.Date()-1, by = "w")
+  lu <- format(lu, format = "%Y/%m/%d")
+  testM <- sapply(lu, function(x) paste0(urlM, x) %>% read_html() %>% html_nodes(xpath='//*[@id="page_filling_chart"]/center[1]/table') %>% html_table())
+  temp <- c()
+  for (i in 1:length(testM)) {
+    temp <- rbind(temp, testM[[i]][,-c(1:2)])
+  }
+  testM <- temp; rm(i, temp)
+  testM$Gross <- as.numeric(gsub("[$,]", "", testM$Gross))
+  testM$Change <- as.numeric(gsub("[+%]", "", testM$Change))
+  testM$Thtrs. <- as.numeric(gsub("[\\,]", "", testM$Thtrs.))
+  testM$`Per Thtr.` <- as.numeric(gsub("[$,]", "", testM$`Per Thtr.`))
+  testM$`Total Gross` <- as.numeric(gsub("[$,]", "", testM$`Total Gross`))
+  colnames(testM) <- tolower(colnames(testM))
+  return(testM)
+}
+
+quarterScraper <- function() {
+  urlQ <- "https://www.the-numbers.com/box-office-chart/weekly/"
   
-  # Get box office data
-  out <- boxoffice::boxoffice(lu, "numbers")
-  return(out)
+  lu <- seq(ceiling_date(floor_date(Sys.Date(), unit = "q"), unit = "w", week_start = 5),
+            Sys.Date()-1, by = "w")
+  lu <- format(lu, format = "%Y/%m/%d")
+  testQ <- sapply(lu, function(x) paste0(urlQ, x) %>% read_html() %>% html_nodes(xpath='//*[@id="page_filling_chart"]/center[1]/table') %>% html_table())
+  temp <- c()
+  for (i in 1:length(testQ)) {
+    temp <- rbind(temp, testQ[[i]][,-c(1:2)])
+  }
+  testQ <- temp; rm(i, temp)
+  testQ$Gross <- as.numeric(gsub("[$,]", "", testQ$Gross))
+  testQ$Change <- as.numeric(gsub("[+%]", "", testQ$Change))
+  testQ$Thtrs. <- as.numeric(gsub("[,]", "", testQ$Thtrs.))
+  testQ$`Per Thtr.` <- as.numeric(gsub("[$,]", "", testQ$`Per Thtr.`))
+  testQ$`Total Gross` <- as.numeric(gsub("[$,]", "", testQ$`Total Gross`))
+  colnames(testQ) <- tolower(colnames(testQ))
+  return(testQ)
+}
+
+# Dashboard
+plotCompBarplot <- function(w, m, q, x) {
+  wBO1 <- sum(w$`per thtr.`[!is.na(w$`per thtr.`)])
+  mBO1 <- sum(m$`per thtr.`[!is.na(m$`per thtr.`)])
+  qBO1 <- sum(q$`per thtr.`[!is.na(q$`per thtr.`)])
+  gaW <- wBO1*runif(1,0.4,0.9); gaM <- mBO1*runif(1,0.5,0.8); gaQ <- qBO1*runif(1,0.6,0.7)
+  dat <- data.frame(stringsAsFactors = FALSE,
+                    time = rep(c("Week", "Month", "Quarter"), each = 6),
+                    type = rep(rep(c("domestic", "international", "global"), each = 2), 3),
+                    group = rep(c("Average per Theater", "Glen Art"), 9),
+                    gross = round(c(wBO1, gaW, wBO1*runif(1,0.2,0.5), gaW, NA, gaW,
+                                    mBO1, gaM, mBO1*runif(1,0.2,0.5), gaM, NA, gaM,
+                                    qBO1, gaQ, qBO1*runif(1,0.2,0.5), gaQ, NA, gaQ)))
+  dat[is.na(dat$gross), "gross"] <- dat[dat$type == "domestic" & dat$group == "Average per Theater", "gross"] + dat[dat$type == "international" & dat$group == "Average per Theater", "gross"]
+  dat$time <- factor(dat$time, levels = c("Week", "Month", "Quarter"))
+  
+  # Plot
+  if (x == "domestic") {
+    datd <- dat[dat$type == "domestic",]
+    g <- ggplot(datd, aes(x = time, y = gross)) +
+      geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
+      xlab("") + ylab("Boxoffice Gross") +
+      scale_y_continuous(labels = scales::dollar) +
+      theme_bw() +
+      scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
+      theme(axis.title = element_text(face = "bold", size = 16),
+            axis.text = element_text(size = 12),
+            legend.text = element_text(size = 12))
+  } else if (x == "international") {
+    dati <- dat[dat$type == "international",]
+    g <- ggplot(dati, aes(x = time, y = gross)) +
+      geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
+      xlab("") + ylab("Boxoffice Gross") +
+      scale_y_continuous(labels = scales::dollar) +
+      theme_bw() +
+      scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
+      theme(axis.title = element_text(face = "bold", size = 16),
+            axis.text = element_text(size = 12),
+            legend.text = element_text(size = 12))
+  } else {
+    datg <- dat[dat$type == "global",]
+    g <- ggplot(datg, aes(x = time, y = gross)) +
+      geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
+      xlab("") + ylab("Boxoffice Gross") +
+      scale_y_continuous(labels = scales::dollar) +
+      theme_bw() +
+      scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
+      theme(axis.title = element_text(face = "bold", size = 16),
+            axis.text = element_text(size = 12),
+            legend.text = element_text(size = 12))
+  }
+  return(g)
 }
 
 plotMoviePareto <- function(dat) {
@@ -55,7 +155,7 @@ plotMoviePareto <- function(dat) {
   # Plot
   g <- ggplot(dat1, aes(x = movie, y = gross)) +
     geom_bar(stat = "identity", fill = "mediumpurple3") +
-    xlab("Film") + ylab("Gross") +
+    xlab("Film") + ylab("Boxoffice Gross") +
     scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 20)) +
     scale_y_continuous(labels = scales::dollar) +
     theme_bw() +
@@ -65,60 +165,7 @@ plotMoviePareto <- function(dat) {
   return(g)
 }
 
-plotCompBarplot <- function(w, m, q, x) {
-  wBO1 <- sum(w$gross[!is.na(w$gross)])
-  mBO1 <- sum(m$gross[!is.na(m$gross)])
-  qBO1 <- sum(q$gross[!is.na(q$gross)])
-  dat <- data.frame(stringsAsFactors = FALSE,
-                    time = rep(c("Week", "Month", "Quarter"), each = 6),
-                    type = rep(rep(c("domestic", "international", "global"), each = 2), 3),
-                    group = rep(c("Average", "Glen Art"), 9),
-                    gross = c(wBO1*runif(1,0.7,0.75), NA, mBO1*runif(1,0.6,0.65), NA, qBO1*runif(1,0.8,0.85), NA,
-                              wBO1*runif(1,0.7,0.75), NA, mBO1*runif(1,0.6,0.65), NA, qBO1*runif(1,0.8,0.85), NA,
-                              wBO1*runif(1,0.7,0.75), NA, mBO1*runif(1,0.6,0.65), NA, qBO1*runif(1,0.8,0.85), NA))
-  dat[dat$type == "domestic" & is.na(dat$gross), "gross"] <- dat[dat$type == "domestic" & !is.na(dat$gross), "gross"]*runif(1,0.8,1.1)
-  dat[dat$type == "global" & is.na(dat$gross), "gross"] <- dat[dat$type == "global" & !is.na(dat$gross), "gross"]*runif(1,0.8,1.1)
-  dat[dat$type == "international" & is.na(dat$gross), "gross"] <- dat[dat$type == "global" & dat$group == "Glen Art", "gross"] - dat[dat$type == "domestic" & dat$group == "Glen Art", "gross"]
-  dat$time <- factor(dat$time, levels = c("Week", "Month", "Quarter"))
-  
-  # Plot
-  if (x == "domestic") {
-    datd <- dat[dat$type == "domestic",]
-    g <- ggplot(datd, aes(x = time, y = gross)) +
-      geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
-      xlab("") + ylab("Gross") +
-      scale_y_continuous(labels = scales::dollar) +
-      theme_bw() +
-      scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
-      theme(axis.title = element_text(face = "bold", size = 16),
-            axis.text = element_text(size = 12),
-            legend.text = element_text(size = 12))
-  } else if (x == "international") {
-    dati <- dat[dat$type == "international",]
-    g <- ggplot(dati, aes(x = time, y = gross)) +
-      geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
-      xlab("") + ylab("Gross") +
-      scale_y_continuous(labels = scales::dollar) +
-      theme_bw() +
-      scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
-      theme(axis.title = element_text(face = "bold", size = 16),
-            axis.text = element_text(size = 12),
-            legend.text = element_text(size = 12))
-  } else {
-    datg <- dat[dat$type == "global",]
-    g <- ggplot(datg, aes(x = time, y = gross)) +
-      geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
-      xlab("") + ylab("Gross") +
-      scale_y_continuous(labels = scales::dollar) +
-      theme_bw() +
-      scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
-      theme(axis.title = element_text(face = "bold", size = 16),
-            axis.text = element_text(size = 12),
-            legend.text = element_text(size = 12))
-  }
-  return(g)
-}
-
+# Scheduler
 optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", lastShow = "00:30", interval = 5, screens = 4, allShown = 1) {
   # Format date-times
   firstShow <- paste(showDate, substr(strftime(firstShow, "%T"), 1, 5))
@@ -135,7 +182,7 @@ optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", last
   screeningWindow <- 1:length(times); names(screeningWindow) <- substr(times, 1, 19); rm(times)
   
   # Subset movieDB
-  films <- movieDB[movieDB$startDate < showDate & movieDB$endDate > showDate,]
+  films <- movieDB[movieDB$startDate <= showDate & movieDB$endDate >= showDate,]
   
   # Movie durations
   durations <- ceiling((films$runtime + films$addition)/interval)

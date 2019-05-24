@@ -35,7 +35,8 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       tabItem(tabName = "dashboard",
               fluidRow(
                 column(width = 6,
-                  box(title = "% Annual Target to Date", plotOutput("donut"), width = NULL)
+                  box(div(titlePanel("% Annual Sales Target to Date"), align = "center"),
+                      plotOutput("donut"), width = NULL, solidHeader = FALSE, status = "primary")
                 ),
                 column(width = 6,
                   tabBox(width = NULL,
@@ -100,7 +101,8 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
                 )
               ),
               column(width = 9,
-                box(title = "Historical Visual", collapsible = TRUE, width = NULL,
+                box(div(titlePanel("Glen Art Historical Performance"), align = "center"),
+                    collapsible = TRUE, width = NULL, solidHeader = FALSE,
                     plotOutput("histComparison")
                 )
               )
