@@ -27,7 +27,9 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
   ),
   
   #----- Main panel display depending on which sidebar menu item is selected -----
-  dashboardBody(tags$script(HTML("$('body').addClass('fixed');")),
+  dashboardBody(
+    tags$head(tags$link(href = "style.css", rel = "stylesheet")),
+    tags$script(HTML("$('body').addClass('fixed');")),
     tabItems(
       
       #----- Dashboard -----
@@ -65,30 +67,32 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
             fluidRow(
               column(width = 3,
                 box(title = "Inputs", collapsible = TRUE, width = NULL,
-                    selectInput("predMetric", "Forecast Method:",
-                                choices = c("Predicted Gross", "Film Lifecycle")),
+                    selectInput("predMetric", "Prediction Method:",
+                                choices = c("Predicted Gross Revenue", "Film Lifecycle Earnings")),
+                    radioGroupButtons("predTime", "Time Period:", justified = TRUE,
+                                      choices = c("Q3","Q4","Date Range"), selected = "Q3"),
                     conditionalPanel(
-                      condition = "input.predMetric == 'Predicted Gross'",
-                      dateRangeInput("predDates", "Forecast Date:", start = as.character(Sys.Date()+1),
-                                     end = as.character(Sys.Date()+7), min = as.character(Sys.Date()+1), weekstart = 5)
+                      condition = "input.predTime == 'Date Range'",
+                      dateRangeInput("predDates", "Date Range:", start = "2019-07-01",
+                                     end = as.character(ymd("2019-07-01")+6), min = "2019-07-01")
                     ),
-                    conditionalPanel(
-                      condition = "input.predMetric == 'Film Lifecycle'",
-                      radioButtons("predQuarter", "Quarter:", c("Q3", "Q4")),
-                      uiOutput("predFilms_UI")
-                    )
+                    uiOutput("predFilms_UI")
                 )
               ),
               column(width = 9,
-                box(title = "Predictive Visuals", collapsible = TRUE, width = NULL,
-                    conditionalPanel(
-                      condition = "input.predMetric == 'Predicted Gross'",
+                conditionalPanel(
+                  condition = "input.predMetric == 'Predicted Gross Revenue'",
+                  box(div(titlePanel("Glen Art Theater Forecasted Performance"), align = "center"),
+                      collapsible = TRUE, width = NULL,
                       plotOutput("predGross")
-                    ),
-                    conditionalPanel(
-                      condition = "input.predMetric == 'Film Lifecycle'",
+                  )
+                ),
+                conditionalPanel(
+                  condition = "input.predMetric == 'Film Lifecycle Earnings'",
+                  box(div(titlePanel("Forecasted Film Lifecycle Earnings"), align = "center"),
+                      collapsible = TRUE, width = NULL,
                       plotOutput("predLifecycle")
-                    )
+                  )
                 )
               )
             )
@@ -96,12 +100,12 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
           tabPanel(title = "Historical",
             fluidRow(
               column(width = 3,
-                box(title = "Inputs", collapsible = TRUE, width = NULL,
+                box(title = "Input", collapsible = TRUE, width = NULL,
                     selectInput("histTime", "Time Period:", choices = c("Last Week", "Last Month", "Last Quarter"))
                 )
               ),
               column(width = 9,
-                box(div(titlePanel("Glen Art Historical Performance"), align = "center"),
+                box(div(titlePanel("Glen Art Theater Historical Performance"), align = "center"),
                     collapsible = TRUE, width = NULL, solidHeader = FALSE,
                     plotOutput("histComparison")
                 )
@@ -151,15 +155,15 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
             box(title = "Inputs", collapsible = TRUE, width = NULL,
                 dateInput("schedDate", "Date to Schedule:", value = Sys.Date(),
                           min = Sys.Date(), max = max(movieDB$endDate)),
-                tableOutput("availableFilms_UI"),
+                uiOutput("schedFilms_UI"),
                 timeInput("firstShow", "Earliest Start Time:", value = strptime("11:00:00", "%T"),
                           seconds = FALSE),
                 timeInput("lastShow", "Latest Finish Time:", value = strptime("00:30:00", "%T"),
                           seconds = FALSE),
-                numericInput("interval", "Interval Between Start Times (min)", value = 5,
+                numericInput("interval", "Interval Between Start Times (min):", value = 5,
                              min = 1, max = 60, step = 1),
-                numericInput("screens", "Available Screens", value = 4, min = 1, max = 4, step = 1),
-                numericInput("allShown", "Minimum # Showings per Film", value = 1, min = 0, max = 2)
+                numericInput("screens", "Available Screens:", value = 4, min = 1, max = 4, step = 1),
+                numericInput("allShown", "Minimum # Showings per Film:", value = 1, min = 0, max = 2)
             )
           ),
           column(width = 9,

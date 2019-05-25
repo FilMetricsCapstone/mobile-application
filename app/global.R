@@ -9,6 +9,7 @@ library(rvest)
 library(shiny)
 library(shinydashboard)
 library(shinyTime)
+library(shinyWidgets)
 library(timevis)
 
 #----- Global Variables -----
@@ -166,7 +167,7 @@ plotMoviePareto <- function(dat) {
 }
 
 # Scheduler
-optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", lastShow = "00:30", interval = 5, screens = 4, allShown = 1) {
+optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", lastShow = "00:30", interval = 5, filmList, screens = 4, allShown = 1) {
   # Format date-times
   firstShow <- paste(showDate, substr(strftime(firstShow, "%T"), 1, 5))
   lastShow <- substr(strftime(lastShow, "%T"), 1, 5)
@@ -182,7 +183,7 @@ optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", last
   screeningWindow <- 1:length(times); names(screeningWindow) <- substr(times, 1, 19); rm(times)
   
   # Subset movieDB
-  films <- movieDB[movieDB$startDate <= showDate & movieDB$endDate >= showDate,]
+  films <- movieDB[movieDB$film %in% filmList,]
   
   # Movie durations
   durations <- ceiling((films$runtime + films$addition)/interval)
@@ -314,6 +315,10 @@ optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", last
   
   optSchedule$start <- names(screeningWindow)[optSchedule$start]
   optSchedule$end <- names(screeningWindow)[optSchedule$end]
+  
+  optSchedule$title <- paste(substr(optSchedule$start, 12, 16), "-", 
+                             substr(optSchedule$end, 12, 16), "\nDemand:",
+                             optSchedule$d)
   
   return(optSchedule)
 }

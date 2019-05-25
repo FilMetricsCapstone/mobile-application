@@ -84,18 +84,30 @@ server <- function(input, output, session) {
   #----- Analytics -----
   # Prediction Tab
   output$predFilms_UI <- renderUI({
-    if (input$predQuarter == "Q3") {
-      selectInput("predFilms", "Select Film(s) to View", multiple = TRUE,
-                  choices = list(
-                    "July" = c("Spider-Man: Far From Home", "The Lion King", "Once Upon a Time in Hollywood"),
-                    "August" = c("Hobbs and Shaw", "Dora and the Lost City of Gold", "The Angry Birds Movie 2"),
-                    "September" = c("IT Chapter Two", "Downton Abbey", "Rambo: Last")))
+    if (input$predTime == "Q3") {
+      dat <- movieDB[movieDB$startDate >= "2019-07-01" & movieDB$endDate <= "2019-09-30",]
+      jul <- dat$film[substr(dat$startDate, 6, 7) == "07"]
+      aug <- dat$film[substr(dat$startDate, 6, 7) == "08"]
+      sep <- dat$film[substr(dat$startDate, 6, 7) == "09"]
+      pickerInput("predFilms", label = "Film(s) to View:",
+                  choices = list("July" = jul, "August" = aug, "September" = sep),
+                  multiple = TRUE, selected = c(jul,aug,sep)[1],
+                  options = list(`actions-box` = TRUE, `selected-text-format` = "count > 1"))
+    } else if (input$predTime == "Q4") {
+      dat <- movieDB[movieDB$startDate >= "2019-10-01" & movieDB$endDate <= "2019-12-31",]
+      oct <- dat$film[substr(dat$startDate, 6, 7) == "10"]
+      nov <- dat$film[substr(dat$startDate, 6, 7) == "11"]
+      dec <- dat$film[substr(dat$startDate, 6, 7) == "12"]
+      pickerInput("predFilms", label = "Film(s) to View:",
+                  choices = list("October" = oct, "November" = nov, "December" = dec),
+                  multiple = TRUE, selected = c(oct,nov,dec)[1],
+                  options = list(`actions-box` = TRUE, `selected-text-format` = "count > 1"))
     } else {
-      selectInput("predFilms", "Select Film(s) to View", multiple = TRUE,
-                  choices = list(
-                    "October" = c("Joker", "Zombieland 2", "Gemini Man", "The Addams Family", "Maleficent: Mistress of Evil"),
-                    "November" = c("Terminator: Dark Fate", "Sonic the Hedgehog", "Charlie's Angels", "Frozen 2"),
-                    "December" = c("Jumanji Sequel", "Star Wars: The Rise of Skywalker", "Spies in Disguise")))
+      dat <- movieDB[movieDB$startDate <= input$predDates[2] & movieDB$endDate >= input$predDates[1],]
+      pickerInput("predFilms", label = "Film(s) to View:",
+                  choices = dat$film,
+                  multiple = TRUE, selected = dat$film[1],
+                  options = list(`actions-box` = TRUE, `selected-text-format` = "count > 1"))
     }
   })
   
@@ -176,7 +188,7 @@ server <- function(input, output, session) {
   })
   
   # Raw Data Tab
-  output$fmDT <- DT::renderDT(df, options = list(scrollX = TRUE))
+  output$fmDT <- DT::renderDT(df, options = list(scrollX = TRUE, searching = FALSE))
 
   output$cwDT <- DT::renderDT({
     wBO() %>% dplyr::group_by(movie) %>%
@@ -188,7 +200,7 @@ server <- function(input, output, session) {
                        total_gross = sum(`total gross`, na.rm = TRUE),
                        weeks = max(week, na.rm = TRUE)) %>%
       dplyr::filter(!is.na(movie))
-  }, options = list(scrollX = TRUE))
+  }, options = list(scrollX = TRUE, searching = FALSE))
 
   output$cmDT <- DT::renderDT({
     mBO() %>% dplyr::group_by(movie) %>%
@@ -200,7 +212,7 @@ server <- function(input, output, session) {
                        total_gross = sum(`total gross`, na.rm = TRUE),
                        weeks = max(week, na.rm = TRUE)) %>%
       dplyr::filter(!is.na(movie))
-  }, options = list(scrollX = TRUE))
+  }, options = list(scrollX = TRUE, searching = FALSE))
 
   output$cqDT <- DT::renderDT({
     qBO() %>% dplyr::group_by(movie) %>%
@@ -212,13 +224,14 @@ server <- function(input, output, session) {
                        total_gross = sum(`total gross`, na.rm = TRUE),
                        weeks = max(week, na.rm = TRUE)) %>%
       dplyr::filter(!is.na(movie))
-  }, options = list(scrollX = TRUE))
+  }, options = list(scrollX = TRUE, searching = FALSE))
   
   #----- Screen Optimization -----
-  output$availableFilms_UI <- renderTable({
-    mdb <- movieDB[movieDB$startDate <= input$schedDate & movieDB$endDate >= input$schedDate, "film", drop = FALSE]
-    colnames(mdb) <- "Available Films"
-    mdb
+  output$schedFilms_UI <- renderUI({
+    mdb <- movieDB[movieDB$startDate <= input$schedDate & movieDB$endDate >= input$schedDate, "film"]
+    pickerInput("schedFilms", label = "Film(s) to Schedule:",
+                choices = mdb, multiple = TRUE, selected = mdb,
+                options = list(`actions-box` = TRUE, `selected-text-format` = "count > 1"))
   })
   
   output$optSchedule <- renderTimevis({
@@ -226,9 +239,15 @@ server <- function(input, output, session) {
       return()
     
     os <- isolate({
-      optimizeShowtimes(input$schedDate, input$firstShow, input$lastShow, input$interval, input$screens, input$allShown)
+      optimizeShowtimes(input$schedDate, input$firstShow, input$lastShow, input$interval, input$schedFilms, input$screens, input$allShown)
     })
-    timevis(data = os, groups = groupsData, options = list(showCurrentTime = FALSE))
+    timevis(data = os, groups = groupsData,
+            options = list(
+              showCurrentTime = FALSE,
+              selectable = FALSE,
+              stack = FALSE,
+              showTooltips = TRUE,
+              tooltip.followMouse = TRUE))
   })
   
   #----- Overview (README) ------
