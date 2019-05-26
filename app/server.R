@@ -234,21 +234,49 @@ server <- function(input, output, session) {
                 options = list(`actions-box` = TRUE, `selected-text-format` = "count > 1"))
   })
   
-  output$optSchedule <- renderTimevis({
+  optimalSched <- reactive({
     if (input$optimize == 0)
       return()
     
-    os <- isolate({
+    isolate({
       optimizeShowtimes(input$schedDate, input$firstShow, input$lastShow, input$interval, input$schedFilms, input$screens, input$allShown)
     })
-    timevis(data = os, groups = groupsData,
-            options = list(
-              showCurrentTime = FALSE,
-              selectable = FALSE,
-              stack = FALSE,
-              showTooltips = TRUE,
-              tooltip.followMouse = TRUE))
   })
+  
+  
+  
+  observeEvent(optimalSched(), {
+    yn <- length(unique(optimalSched()$content)) == length(input$schedFilms)*input$allShown
+    if (input$allShown > 0 & !yn) {
+      showModal(
+        modalDialog(easyClose = TRUE, footer = modalButton("OK"),
+          h2("Attention!", align = "center"),
+          h4("Based on the films selected with their associated durations, in addition to the
+             available screening window and the possible start times, one or more films
+             could not meet the minimum number of occurrences constraint. Please click the
+             information button for ways to work around this potential issue. The current
+             schedule as shown is optimal minus meeting this constraint."),
+          br(),
+          h5("If these solutions do not work and the problem persists, please contact
+             customersupport@filmetrics.com", align = "center")
+        )
+      )
+    }
+    
+    
+    output$optSchedule <- renderTimevis({
+      timevis(data = optimalSched(), groups = groupsData,
+              options = list(
+                start = substr(ymd_hms(min(optimalSched()$start)) - minutes(30), 1, 16),
+                end = substr(ymd_hms(max(optimalSched()$end)) + minutes(30), 1, 16),
+                showCurrentTime = FALSE,
+                selectable = FALSE,
+                stack = FALSE,
+                showTooltips = TRUE,
+                tooltip.followMouse = TRUE))
+    })
+  })
+  
   
   #----- Overview (README) ------
   

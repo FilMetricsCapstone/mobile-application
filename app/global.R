@@ -305,7 +305,6 @@ optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", last
     }
     ind1 <- which(occurrences < allShown); ind1 <- ind1[!(names(ind1) %in% ind_n)]
   }
-  rm(d, f, i, ind, ind_n, ind1, ind2, indSmallD, j, k, N, occurrences, s, smallD, st, z)
   temp <- c()
   for (l in 1:length(optSchedule1)) {
     temp <- rbind(temp, optSchedule1[[l]])
@@ -316,7 +315,8 @@ optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", last
   optSchedule$start <- names(screeningWindow)[optSchedule$start]
   optSchedule$end <- names(screeningWindow)[optSchedule$end]
   
-  optSchedule$title <- paste(substr(optSchedule$start, 12, 16), "-", 
+  optSchedule$title <- paste(optSchedule$content, "\n",
+                             substr(optSchedule$start, 12, 16), "-", 
                              substr(optSchedule$end, 12, 16), "\nDemand:",
                              optSchedule$d)
   

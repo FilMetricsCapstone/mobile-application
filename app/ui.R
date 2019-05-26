@@ -18,23 +18,55 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       # Screen Optimization
       menuItem("Scheduler", tabName = "scheduler", icon = icon("clock")),
       
-      # Overview (README)
-      menuItem("Overview", tabName = "overview", icon = icon("info-circle"))
+      # About Us
+      menuItem("About Us", tabName = "about", icon = icon("info-circle"))
     ),
     
     # Logo
-    p(img(src = "logo.jpg", width = "95%"), align = "center")
+    HTML('<footer><img src="logo.jpg" width="95%"</img> </footer>')
+    #p(img(src = "logo.jpg", width = "95%"), align = "center")
   ),
   
   #----- Main panel display depending on which sidebar menu item is selected -----
   dashboardBody(
     tags$head(tags$link(href = "style.css", rel = "stylesheet")),
     tags$script(HTML("$('body').addClass('fixed');")),
+    tags$style(type = 'text/css', "footer{position: absolute; bottom:5%; left: 5%; padding:5px;}"),
+    tags$style(HTML(".box.box-primary>.box-header {
+                      background: #fff
+                    }
+                    .box.box-primary{
+                      border-bottom-color:#8968CD;
+                      border-left-color:#8968CD;
+                      border-right-color:#8968CD;
+                      border-top-color:#8968CD;
+                    }
+                    .box.box-info>.box-header {
+                      background: #fff
+                    }
+                    .box.box-info{
+                      border-bottom-color:#CAE1FF;
+                      border-left-color:#CAE1FF;
+                      border-right-color:#CAE1FF;
+                      border-top-color:#CAE1FF;
+                    }
+                    .nav-tabs-custom .nav-tabs li.active {
+                      background: #8968CD
+                    }
+                    .nav-tabs-custom .nav-tabs li.active{
+                      border-bottom-color:#8968CD;
+                      border-left-color:#8968CD;
+                      border-right-color:#8968CD;
+                      border-top-color:#8968CD;
+                    }")),
     tabItems(
       
       #----- Dashboard -----
       # This page...
       tabItem(tabName = "dashboard",
+              div(helpText(HTML(paste0("For assistance contact ",
+                                       a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
+                  align = "right"),
               fluidRow(
                 column(width = 6,
                   box(div(titlePanel("% Annual Sales Target to Date"), align = "center"),
@@ -62,11 +94,15 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       #----- Analytics -----
       # This page...
       tabItem(tabName = "analytics",
+        div(helpText(HTML(paste0("For assistance contact ",
+                                 a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
+            align = "right"),
         tabsetPanel(
           tabPanel(title = "Predictive",
+            br(),
             fluidRow(
               column(width = 3,
-                box(title = "Inputs", collapsible = TRUE, width = NULL,
+                box(title = "Inputs", collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "info",
                     selectInput("predMetric", "Prediction Method:",
                                 choices = c("Predicted Gross Revenue", "Film Lifecycle Earnings")),
                     radioGroupButtons("predTime", "Time Period:", justified = TRUE,
@@ -83,14 +119,14 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
                 conditionalPanel(
                   condition = "input.predMetric == 'Predicted Gross Revenue'",
                   box(div(titlePanel("Glen Art Theater Forecasted Performance"), align = "center"),
-                      collapsible = TRUE, width = NULL,
+                      collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "primary",
                       plotOutput("predGross")
                   )
                 ),
                 conditionalPanel(
                   condition = "input.predMetric == 'Film Lifecycle Earnings'",
                   box(div(titlePanel("Forecasted Film Lifecycle Earnings"), align = "center"),
-                      collapsible = TRUE, width = NULL,
+                      collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "primary",
                       plotOutput("predLifecycle")
                   )
                 )
@@ -98,24 +134,26 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
             )
           ),
           tabPanel(title = "Historical",
+            br(),
             fluidRow(
               column(width = 3,
-                box(title = "Input", collapsible = TRUE, width = NULL,
+                box(title = "Input", collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "info",
                     selectInput("histTime", "Time Period:", choices = c("Last Week", "Last Month", "Last Quarter"))
                 )
               ),
               column(width = 9,
                 box(div(titlePanel("Glen Art Theater Historical Performance"), align = "center"),
-                    collapsible = TRUE, width = NULL, solidHeader = FALSE,
+                    collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "primary",
                     plotOutput("histComparison")
                 )
               )
             )
           ),
           tabPanel(title = "Raw Data",
+            br(),
             fluidRow(
               column(width = 3,
-                box(title = "Inputs", collapsible = TRUE, width = NULL,
+                box(title = "Inputs", collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "info",
                     selectInput("dataset", "Data Set to View:", list(
                       "FilMetrics" = c("FilMetrics Data"),
                       "The-Numbers.com" = c("Current Week", "Current Month", "Current Quarter")
@@ -123,22 +161,37 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
                 )
               ),
               column(width = 9,
-                box(title = "Data Table", collapsible = TRUE, width = NULL,
+                box(title = "Data Table", collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "primary",
                     conditionalPanel(
                       condition = "input.dataset == 'FilMetrics Data'",
-                      DT::DTOutput("fmDT")
+                      DT::DTOutput("fmDT"),
+                      helpText(HTML(paste0("These data were obtained from a number of open
+                                           sources including ",
+                                           a("imdb.com", target = "_blank", href = "https://www.imdb.com/"), ", ",
+                                           a("themoviedb.org", target = "_blank", href = "https://www.themoviedb.org/"), ", and ",
+                                           a("movielens.org", target = "_blank", href = "https://movielens.org/"),
+                                           ".")))
                     ),
                     conditionalPanel(
                       condition = "input.dataset == 'Current Week'",
-                      DT::DTOutput("cwDT")
+                      DT::DTOutput("cwDT"),
+                      helpText(HTML(paste0("These data were obtained from ",
+                                           a("the-numbers.com", target = "_blank", href = "https://www.the-numbers.com/"),
+                                           ".")))
                     ),
                     conditionalPanel(
                       condition = "input.dataset == 'Current Month'",
-                      DT::DTOutput("cmDT")
+                      DT::DTOutput("cmDT"),
+                      helpText(HTML(paste0("These data were obtained from ",
+                                           a("the-numbers.com", target = "_blank", href = "https://www.the-numbers.com/"),
+                                           ".")))
                     ),
                     conditionalPanel(
                       condition = "input.dataset == 'Current Quarter'",
-                      DT::DTOutput("cqDT")
+                      DT::DTOutput("cqDT"),
+                      helpText(HTML(paste0("These data were obtained from ",
+                                           a("the-numbers.com", target = "_blank", href = "https://www.the-numbers.com/"),
+                                           ".")))
                     )
                   )
                 )
@@ -150,40 +203,44 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       #----- Screen Optimization -----
       # This page...
       tabItem(tabName = "scheduler",
+        div(helpText(HTML(paste0("For assistance contact ",
+                                 a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
+            align = "right"),
         fluidRow(
           column(width = 3,
-            box(title = "Inputs", collapsible = TRUE, width = NULL,
+            box(title = "Theater Constraints", collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "info",
                 dateInput("schedDate", "Date to Schedule:", value = Sys.Date(),
                           min = Sys.Date(), max = max(movieDB$endDate)),
-                uiOutput("schedFilms_UI"),
                 timeInput("firstShow", "Earliest Start Time:", value = strptime("11:00:00", "%T"),
                           seconds = FALSE),
                 timeInput("lastShow", "Latest Finish Time:", value = strptime("00:30:00", "%T"),
                           seconds = FALSE),
                 numericInput("interval", "Interval Between Start Times (min):", value = 5,
                              min = 1, max = 60, step = 1),
-                numericInput("screens", "Available Screens:", value = 4, min = 1, max = 4, step = 1),
-                numericInput("allShown", "Minimum # Showings per Film:", value = 1, min = 0, max = 2)
+                numericInput("screens", "Available Screens:", value = 4, min = 1, max = 4, step = 1)
             )
           ),
           column(width = 9,
-            actionButton("optimize", "Schedule", icon = icon("clock")),
-            br(),br(),
-            box(title = "Optimal Schedule", collapsible = TRUE, width = NULL,
-                timevisOutput("optSchedule")
+            fluidRow(
+              box(title = "Film Inputs", collapsible = TRUE, width = 4, solidHeader = FALSE, status = "info",
+                uiOutput("schedFilms_UI"),
+                numericInput("allShown", "Minimum # Showings per Film:", value = 1, min = 0, max = 2),
+                actionButton("optimize", "Schedule", icon = icon("clock"))
+              )
+            ),
+            fluidRow(
+              box(div(titlePanel("Optimal Schedule"), align = "center"),
+                  collapsible = TRUE, width = 12, solidHeader = FALSE, status = "primary",
+                  timevisOutput("optSchedule")
+              )
             )
           )
         )        
       ),
       
       #----- Overview (README) -----
-      tabItem(tabName = "overview",
-              h1("User's Guide Stuff Here", align = "center"),
-              div(
-                div(h5("Created by Omer Ahmad, Nick Betzsold, Jeff Grobart, Muthukumar Palani, and Suresh Sabramanian"),
-                    style = "position: absolute; bottom: 5px"),
-                align = "center"
-              )
+      tabItem(tabName = "about",
+        includeMarkdown("aboutUs.md")      
       )
     )
   )
