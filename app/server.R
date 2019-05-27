@@ -20,6 +20,15 @@ server <- function(input, output, session) {
   })
   
   #----- Dashboard -----
+  observeEvent(input$infoDashboard, {
+    showModal(
+      modalDialog(easyClose = TRUE, size = "l",
+        h2("Dashboard Information", align = "center"),
+        includeMarkdown("infoDashboard.md")
+      )
+    )
+  })
+  
   # Box 1 - Domestic
   output$compD <- renderPlot({
     plotCompBarplot(wBO(), mBO(), qBO(), "domestic")
@@ -62,7 +71,7 @@ server <- function(input, output, session) {
             axis.title = element_blank(),
             axis.text = element_blank(),
             axis.ticks = element_blank(),
-            legend.position = c(0.5, 0.1),
+            legend.position = c(0.5, 0.9),
             legend.text = element_text(size = 16))
   })
   
@@ -82,6 +91,15 @@ server <- function(input, output, session) {
   })
   
   #----- Analytics -----
+  observeEvent(input$infoAnalytics, {
+    showModal(
+      modalDialog(easyClose = TRUE, size = "l",
+                  h2("Analytics Information", align = "center"),
+                  includeMarkdown("infoAnalytics.md")
+      )
+    )
+  })
+  
   # Prediction Tab
   output$predFilms_UI <- renderUI({
     if (input$predTime == "Q3") {
@@ -141,7 +159,8 @@ server <- function(input, output, session) {
       theme(axis.title = element_text(face = "bold", size = 16),
             axis.text = element_text(size = 12),
             legend.title = element_text(face = "bold", size = 16),
-            legend.text = element_text(size = 12))
+            legend.text = element_text(size = 12),
+            legend.position = "top")
   })
   
   # Historical Tab
@@ -184,7 +203,8 @@ server <- function(input, output, session) {
       theme(axis.title = element_text(face = "bold", size = 16),
             axis.text = element_text(size = 12),
             legend.title = element_blank(),
-            legend.text = element_text(size = 12))
+            legend.text = element_text(size = 12),
+            legend.position = "top")
   })
   
   # Raw Data Tab
@@ -227,6 +247,15 @@ server <- function(input, output, session) {
   }, options = list(scrollX = TRUE, searching = FALSE))
   
   #----- Screen Optimization -----
+  observeEvent(input$infoScheduler, {
+    showModal(
+      modalDialog(easyClose = TRUE, size = "l",
+                  h2("Screen Optimization Information", align = "center"),
+                  includeMarkdown("infoScheduler.md")
+      )
+    )
+  })
+  
   output$schedFilms_UI <- renderUI({
     mdb <- movieDB[movieDB$startDate <= input$schedDate & movieDB$endDate >= input$schedDate, "film"]
     pickerInput("schedFilms", label = "Film(s) to Schedule:",
@@ -257,8 +286,11 @@ server <- function(input, output, session) {
              information button for ways to work around this potential issue. The current
              schedule as shown is optimal minus meeting this constraint."),
           br(),
-          h5("If these solutions do not work and the problem persists, please contact
-             customersupport@filmetrics.com", align = "center")
+          h5(HTML(
+            paste0("If these solutions do not work and the problem persists, please contact ",
+                   a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")
+            )
+          ), align = "center")
         )
       )
     }
@@ -268,7 +300,7 @@ server <- function(input, output, session) {
       timevis(data = optimalSched(), groups = groupsData,
               options = list(
                 start = substr(ymd_hms(min(optimalSched()$start)) - minutes(30), 1, 16),
-                end = substr(ymd_hms(max(optimalSched()$end)) + minutes(30), 1, 16),
+                end = substr(ymd_hms(max(optimalSched()$end)) + hours(1) + minutes(30), 1, 16),
                 showCurrentTime = FALSE,
                 selectable = FALSE,
                 stack = FALSE,
@@ -276,8 +308,4 @@ server <- function(input, output, session) {
                 tooltip.followMouse = TRUE))
     })
   })
-  
-  
-  #----- Overview (README) ------
-  
 }

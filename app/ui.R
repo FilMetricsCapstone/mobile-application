@@ -29,7 +29,10 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
   
   #----- Main panel display depending on which sidebar menu item is selected -----
   dashboardBody(
-    tags$head(tags$link(href = "style.css", rel = "stylesheet")),
+    tags$head(tags$link(href = "style.css", rel = "stylesheet"),
+              tags$style(HTML('#infoDashboard{background-color:#CAE1FF}')),
+              tags$style(HTML('#infoAnalytics{background-color:#CAE1FF}')),
+              tags$style(HTML('#infoScheduler{background-color:#CAE1FF}'))),
     tags$script(HTML("$('body').addClass('fixed');")),
     tags$style(type = 'text/css', "footer{position: absolute; bottom:5%; left: 5%; padding:5px;}"),
     tags$style(HTML(".box.box-primary>.box-header {
@@ -64,6 +67,7 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       #----- Dashboard -----
       # This page...
       tabItem(tabName = "dashboard",
+              div(actionButton("infoDashboard", label = "", icon = icon("info-circle")), align = "right"),
               div(helpText(HTML(paste0("For assistance contact ",
                                        a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
                   align = "right"),
@@ -94,6 +98,7 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       #----- Analytics -----
       # This page...
       tabItem(tabName = "analytics",
+        div(actionButton("infoAnalytics", label = "", icon = icon("info-circle")), align = "right"),
         div(helpText(HTML(paste0("For assistance contact ",
                                  a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
             align = "right"),
@@ -203,6 +208,7 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       #----- Screen Optimization -----
       # This page...
       tabItem(tabName = "scheduler",
+        div(actionButton("infoScheduler", label = "", icon = icon("info-circle")), align = "right"),
         div(helpText(HTML(paste0("For assistance contact ",
                                  a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
             align = "right"),

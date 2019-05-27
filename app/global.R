@@ -117,7 +117,8 @@ plotCompBarplot <- function(w, m, q, x) {
       scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
       theme(axis.title = element_text(face = "bold", size = 16),
             axis.text = element_text(size = 12),
-            legend.text = element_text(size = 12))
+            legend.text = element_text(size = 12),
+            legend.position = "top")
   } else if (x == "international") {
     dati <- dat[dat$type == "international",]
     g <- ggplot(dati, aes(x = time, y = gross)) +
@@ -128,7 +129,8 @@ plotCompBarplot <- function(w, m, q, x) {
       scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
       theme(axis.title = element_text(face = "bold", size = 16),
             axis.text = element_text(size = 12),
-            legend.text = element_text(size = 12))
+            legend.text = element_text(size = 12),
+            legend.position = "top")
   } else {
     datg <- dat[dat$type == "global",]
     g <- ggplot(datg, aes(x = time, y = gross)) +
@@ -139,7 +141,8 @@ plotCompBarplot <- function(w, m, q, x) {
       scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
       theme(axis.title = element_text(face = "bold", size = 16),
             axis.text = element_text(size = 12),
-            legend.text = element_text(size = 12))
+            legend.text = element_text(size = 12),
+            legend.position = "top")
   }
   return(g)
 }
