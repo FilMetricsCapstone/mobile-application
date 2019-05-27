@@ -24,7 +24,6 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
     
     # Logo
     HTML('<footer><img src="logo.jpg" width="95%"</img> </footer>')
-    #p(img(src = "logo.jpg", width = "95%"), align = "center")
   ),
   
   #----- Main panel display depending on which sidebar menu item is selected -----
@@ -61,6 +60,14 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
                       border-left-color:#8968CD;
                       border-right-color:#8968CD;
                       border-top-color:#8968CD;
+                    }
+                    .shiny-notification {
+                      position:fixed;
+                      top: calc(50%);;
+                      left: calc(50%);;
+                    }
+                    .shiny-notification .progress-bar {
+                      background: #8968CD;
                     }")),
     tabItems(
       
@@ -117,7 +124,8 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
                       dateRangeInput("predDates", "Date Range:", start = "2019-07-01",
                                      end = as.character(ymd("2019-07-01")+6), min = "2019-07-01")
                     ),
-                    uiOutput("predFilms_UI")
+                    uiOutput("predFilms_UI"),
+                    actionButton("update", "Update Plots")
                 )
               ),
               column(width = 9,
@@ -125,14 +133,14 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
                   condition = "input.predMetric == 'Predicted Gross Revenue'",
                   box(div(titlePanel("Glen Art Theater Forecasted Performance"), align = "center"),
                       collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "primary",
-                      plotOutput("predGross")
+                      plotlyOutput("predGross")
                   )
                 ),
                 conditionalPanel(
                   condition = "input.predMetric == 'Film Lifecycle Earnings'",
                   box(div(titlePanel("Forecasted Film Lifecycle Earnings"), align = "center"),
                       collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "primary",
-                      plotOutput("predLifecycle")
+                      plotlyOutput("predLifecycle")
                   )
                 )
               )
@@ -149,7 +157,7 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
               column(width = 9,
                 box(div(titlePanel("Glen Art Theater Historical Performance"), align = "center"),
                     collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "primary",
-                    plotOutput("histComparison")
+                    plotlyOutput("histComparison")
                 )
               )
             )

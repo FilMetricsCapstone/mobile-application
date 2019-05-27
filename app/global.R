@@ -5,6 +5,7 @@
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(plotly)
 library(rvest)
 library(shiny)
 library(shinydashboard)
@@ -13,20 +14,17 @@ library(shinyWidgets)
 library(timevis)
 
 #----- Global Variables -----
+# Movie database containing start/end dates, runtimes, additional times, & projected popularity
 movieDB <- read.csv("data/movieDB.csv", stringsAsFactors = FALSE)
+
+# Estimated mean and std. deviation for popularity categories
+load("data/projRev.Rdata")
 
 # Final Model Data Set
 df <- read.csv("data/Final_Model_data.csv"); df <- df[,-1]
-# df <- df[,-c(1,3,4,12)]
-# df <- df[!(df$budget < 1000 | df$revenue < 1000),]
-
-# # Ticket Prices
-# tix_mat <- 5
-# tix_reg <- 7
 
 # Group data for timevis output
-groupsData <- data.frame(id = 1:4,
-                         content = c("Screen 1", "Screen 2", "Screen 3", "Screen 4"))
+groupsData <- data.frame(id = 1:4, content = c("Screen 1", "Screen 2", "Screen 3", "Screen 4"))
 
 #----- Global Functions -----
 # Data
@@ -90,12 +88,15 @@ quarterScraper <- function() {
   return(testQ)
 }
 
+# Colors
+colFunc <- colorRampPalette(c("mediumpurple3", "lightsteelblue1"))
+
 # Dashboard
 plotCompBarplot <- function(w, m, q, x) {
   wBO1 <- sum(w$`per thtr.`[!is.na(w$`per thtr.`)])
   mBO1 <- sum(m$`per thtr.`[!is.na(m$`per thtr.`)])
   qBO1 <- sum(q$`per thtr.`[!is.na(q$`per thtr.`)])
-  gaW <- wBO1*runif(1,0.4,0.9); gaM <- mBO1*runif(1,0.5,0.8); gaQ <- qBO1*runif(1,0.6,0.7)
+  gaW <- wBO1*runif(1,0.5,0.8); gaM <- mBO1*runif(1,0.55,0.85); gaQ <- qBO1*runif(1,0.6,0.9)
   dat <- data.frame(stringsAsFactors = FALSE,
                     time = rep(c("Week", "Month", "Quarter"), each = 6),
                     type = rep(rep(c("domestic", "international", "global"), each = 2), 3),
@@ -111,11 +112,12 @@ plotCompBarplot <- function(w, m, q, x) {
     datd <- dat[dat$type == "domestic",]
     g <- ggplot(datd, aes(x = time, y = gross)) +
       geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
-      xlab("") + ylab("Boxoffice Gross") +
+      xlab("") + ylab("Boxoffice Gross") + ggtitle("Glen Art Revenue Comparison") +
       scale_y_continuous(labels = scales::dollar) +
       theme_bw() +
       scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
-      theme(axis.title = element_text(face = "bold", size = 16),
+      theme(plot.title = element_text(size = 20, hjust = 0.5),
+            axis.title = element_text(face = "bold", size = 16),
             axis.text = element_text(size = 12),
             legend.text = element_text(size = 12),
             legend.position = "top")
@@ -159,14 +161,67 @@ plotMoviePareto <- function(dat) {
   # Plot
   g <- ggplot(dat1, aes(x = movie, y = gross)) +
     geom_bar(stat = "identity", fill = "mediumpurple3") +
-    xlab("Film") + ylab("Boxoffice Gross") +
+    xlab("Film") + ylab("Boxoffice Gross") + ggtitle("Top Performing Films") +
     scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 20)) +
     scale_y_continuous(labels = scales::dollar) +
     theme_bw() +
-    theme(axis.title = element_text(face = "bold", size = 16),
+    theme(plot.title = element_text(size = 20, hjust = 0.5),
+          axis.title = element_text(face = "bold", size = 16),
           axis.text = element_text(size = 12),
           axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
   return(g)
+}
+
+# Analytics
+dayMultiplier <- function(d) {
+  ifelse(d == 1, rnorm(1, 0.18, 0.03),
+  ifelse(d == 2, rnorm(1, 0.07, 0.02),
+  ifelse(d == 3, rnorm(1, 0.06, 0.02),
+  ifelse(d == 4, rnorm(1, 0.07, 0.02),
+  ifelse(d == 5, rnorm(1, 0.19, 0.03),
+  ifelse(d == 6, rnorm(1, 0.21, 0.04), rnorm(1, 0.22, 0.04)))))))
+}
+
+getFutureBO <- function(pt, pd = NULL, pf) {
+  if (pt == "Q3") {
+    Date <- seq(as.POSIXct("2019-07-01"), as.POSIXct("2019-09-30"), by = "day")
+  } else if (pt == "Q4") {
+    Date <- seq(as.POSIXct("2019-10-01"), as.POSIXct("2019-12-31"), by = "day")
+  } else {
+    Date <- seq(as.POSIXct(pd[1]), as.POSIXct(pd[2]), by = "day")
+  }
+  
+  inc <- 1/length(pf)
+  dat <- data.frame(Date, stringsAsFactors = FALSE)
+  withProgress(message = "Calculating Projected Gross Income", value = 0.1, {
+    for (i in 1:length(pf)) {
+      x <- c()
+      ge <- ifelse(movieDB[movieDB$film == pf[i], "popularity"] == 5, rnorm(1, u1, s1),
+            ifelse(movieDB[movieDB$film == pf[i], "popularity"] == 4, rnorm(1, u2, s2),
+            ifelse(movieDB[movieDB$film == pf[i], "popularity"] == 3, rnorm(1, u3, s3),
+            ifelse(movieDB[movieDB$film == pf[i], "popularity"] == 2, rnorm(1, u4, s4), rnorm(1, u5, s5)))))/400
+      for (j in 1:length(Date)) {
+        if (Date[j] <= movieDB[movieDB$film == pf[i], "endDate"]) {
+          wk <- ceiling(as.numeric(as.duration(movieDB[movieDB$film == pf[i], "startDate"] %--% Date[j]), "weeks"))
+          x <- c(x, ifelse(wk == 1, ge*dayMultiplier(wday(Date[j]))*0.304,
+                    ifelse(wk == 2, ge*dayMultiplier(wday(Date[j]))*0.1875,
+                    ifelse(wk == 3, ge*dayMultiplier(wday(Date[j]))*0.1284,
+                    ifelse(wk == 4, ge*dayMultiplier(wday(Date[j]))*0.0944,
+                    ifelse(wk == 5, ge*dayMultiplier(wday(Date[j]))*0.0713,
+                    ifelse(wk == 6, ge*dayMultiplier(wday(Date[j]))*0.0615,
+                    ifelse(wk == 7, ge*dayMultiplier(wday(Date[j]))*0.051, ge*dayMultiplier(wday(Date[j]))*0.0439))))))))
+        } else {
+          x <- c(x, NA)
+        }
+      }
+      dat <- cbind(dat, round(x))
+      incProgress(inc, detail = pf[i])
+    }
+  })
+  colnames(dat)[2:ncol(dat)] <- pf
+  dat$Total <- rowSums(dat[,-1, drop = FALSE], na.rm = TRUE)
+  dat$Total <- ifelse(dat$Total == 0, NA, dat$Total)
+  return(dat)
 }
 
 # Scheduler

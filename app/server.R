@@ -103,68 +103,84 @@ server <- function(input, output, session) {
   # Prediction Tab
   output$predFilms_UI <- renderUI({
     if (input$predTime == "Q3") {
-      dat <- movieDB[movieDB$startDate >= "2019-07-01" & movieDB$endDate <= "2019-09-30",]
+      dat <- movieDB[movieDB$startDate >= "2019-07-01" & movieDB$startDate <= "2019-09-30",]
       jul <- dat$film[substr(dat$startDate, 6, 7) == "07"]
       aug <- dat$film[substr(dat$startDate, 6, 7) == "08"]
       sep <- dat$film[substr(dat$startDate, 6, 7) == "09"]
       pickerInput("predFilms", label = "Film(s) to View:",
                   choices = list("July" = jul, "August" = aug, "September" = sep),
-                  multiple = TRUE, selected = c(jul,aug,sep)[1],
+                  multiple = TRUE, selected = c(jul,aug,sep)[1:3],
                   options = list(`actions-box` = TRUE, `selected-text-format` = "count > 1"))
     } else if (input$predTime == "Q4") {
-      dat <- movieDB[movieDB$startDate >= "2019-10-01" & movieDB$endDate <= "2019-12-31",]
+      dat <- movieDB[movieDB$startDate >= "2019-10-01" & movieDB$startDate <= "2019-12-31",]
       oct <- dat$film[substr(dat$startDate, 6, 7) == "10"]
       nov <- dat$film[substr(dat$startDate, 6, 7) == "11"]
       dec <- dat$film[substr(dat$startDate, 6, 7) == "12"]
       pickerInput("predFilms", label = "Film(s) to View:",
                   choices = list("October" = oct, "November" = nov, "December" = dec),
-                  multiple = TRUE, selected = c(oct,nov,dec)[1],
+                  multiple = TRUE, selected = c(oct,nov,dec)[1:3],
                   options = list(`actions-box` = TRUE, `selected-text-format` = "count > 1"))
     } else {
-      dat <- movieDB[movieDB$startDate <= input$predDates[2] & movieDB$endDate >= input$predDates[1],]
+      dat <- movieDB[movieDB$startDate >= input$predDates[1] & movieDB$startDate <= input$predDates[2],]
       pickerInput("predFilms", label = "Film(s) to View:",
                   choices = dat$film,
-                  multiple = TRUE, selected = dat$film[1],
+                  multiple = TRUE, selected = dat$film[1:3],
                   options = list(`actions-box` = TRUE, `selected-text-format` = "count > 1"))
     }
   })
   
-  output$predGross <- renderPlot({
-    x <- seq(as.POSIXct(input$predDates[1]), as.POSIXct(input$predDates[2]), by = "hour")
-    y <- runif(length(x), 500000, 1000000)
-    z <- data.frame(x = x, y = y, stringsAsFactors = FALSE)
+  futureBO <- reactive({
+    if (input$update == 0)
+      return()
     
-    ggplot(z, aes(x = x, y = y)) + geom_line() +
-      xlab("Date") + ylab("Gross") + 
-      scale_y_continuous(labels = scales::dollar) +
-      theme_bw() +
-      theme(axis.title = element_text(face = "bold", size = 16),
-            axis.text = element_text(size = 12))
+    isolate({
+      getFutureBO(input$predTime, input$predDates, input$predFilms)
+    })
   })
   
-  output$predLifecycle <- renderPlot({
-    x <- 1:100
-    y <- c()
-    for (i in 1:length(input$predFilms)) {
-      y <- cbind(y, runif(100, 500000, 1000000))
-    }
-    z <- data.frame(x, y, stringsAsFactors = FALSE)
-    colnames(z)[2:(ncol(z))] <- input$predFilms
-    z <- reshape2::melt(z, id.vars = "x", value.name = "y")
+  observeEvent(futureBO(), {
+    output$predGross <- renderPlotly({
+      validate(
+        need(length(input$predFilms) > 0, "Please select at least one film and click 'Update Plots'.")
+      )
+      
+      g <- ggplot(futureBO(), aes(x = Date, y = Total)) + geom_line(size = 2, color = "mediumpurple3") +
+        xlab("Date") + ylab("Projected Boxoffice Gross") +
+        scale_y_continuous(labels = scales::dollar) +
+        theme_bw() +
+        theme(axis.title = element_text(face = "bold", size = 16),
+              axis.text = element_text(size = 12))
+      ggplotly(g)
+    })
     
-    ggplot(z, aes(x = x, y = y, color = variable)) + geom_line() +
-      xlab("Time") + ylab("Gross") + 
-      scale_y_continuous(labels = scales::dollar) +
-      theme_bw() +
-      theme(axis.title = element_text(face = "bold", size = 16),
-            axis.text = element_text(size = 12),
-            legend.title = element_text(face = "bold", size = 16),
-            legend.text = element_text(size = 12),
-            legend.position = "top")
+    output$predLifecycle <- renderPlotly({
+      validate(
+        need(length(input$predFilms) > 0, "Please select at least one film and click 'Update Plots'.")
+      )
+      
+      dat1 <- futureBO()[,-ncol(futureBO())]
+      dat1 <- reshape2::melt(dat1, id.vars = "Date", variable.name = "Film", value.name = "Gross")
+      dat1$Film <- as.factor(dat1$Film)
+      
+      g <- ggplot(dat1, aes(x = Date, y = Gross, color = Film)) + geom_line(size = 2) +
+        xlab("Date") + ylab("Projected Boxoffice Gross") + 
+        scale_y_continuous(labels = scales::dollar) +
+        scale_color_manual(values = colFunc(length(unique(dat1$Film))), name = "") +
+        theme_bw() +
+        theme(axis.title = element_text(face = "bold", size = 16),
+              axis.text = element_text(size = 12),
+              legend.title = element_blank(),
+              legend.text = element_text(size = 10),
+              legend.position = "top")
+      p <- ggplotly(g)
+      p %>% layout(legend = list(orientation = "h",
+                                 xanchor = "center", x = 0.5,
+                                 yanchor = "top", y = 100))
+    })
   })
   
   # Historical Tab
-  output$histComparison <- renderPlot({
+  output$histComparison <- renderPlotly({
     if (input$histTime == "Last Week") {
       x <- rep(seq(floor_date(Sys.Date()-7, unit = "w", week_start = 5),
                    floor_date(Sys.Date(), unit = "w", week_start = 5), by = "d"),
@@ -180,7 +196,7 @@ server <- function(input, output, session) {
     }
     w <- rep(c("Projected", "Actual"), length(x)/2); w <- factor(w, levels = c("Projected", "Actual"))
     z <- data.frame(x, w, stringsAsFactors = FALSE)
-    wg <- round(rnorm(1, 250000, 33333))
+    wg <- round(rnorm(1, 125000, 25000))
     y <- c()
     for (i in 1:nrow(z)) {
       y <- c(y,
@@ -195,7 +211,7 @@ server <- function(input, output, session) {
     }
     z <- data.frame(z, y, stringsAsFactors = FALSE)
       
-    ggplot(z, aes(x = x, y = y, color = w)) + geom_line(size = 2) +
+    g <- ggplot(z, aes(x = x, y = y, color = w)) + geom_line(size = 2) +
       xlab("Date") + ylab("Boxoffice Gross") + 
       scale_y_continuous(labels = scales::dollar) +
       theme_bw() +
@@ -205,6 +221,10 @@ server <- function(input, output, session) {
             legend.title = element_blank(),
             legend.text = element_text(size = 12),
             legend.position = "top")
+    p <- ggplotly(g)
+    p %>% layout(legend = list(orientation = "h",
+                               xanchor = "center", x = 0.5,
+                               yanchor = "top", y = 100))
   })
   
   # Raw Data Tab

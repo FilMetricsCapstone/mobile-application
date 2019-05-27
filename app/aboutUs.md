@@ -10,7 +10,7 @@
 <span style="font-size: larger;">**Omer Ahmad:** Omer is the lead for data engineering and database management as well as a mobile application developer. He has three years of experience in statistical modeling and data analytics.</span><br><br><br><br>
 
 <img style="float: left;margin-left: 10px;margin-right: 10px" width="75" src = "Nick.png">
-<span style="font-size: larger;">**Nick Betzsold:** Nick is the lead decision analyst in recommending optimal theater screen utilization. His background is in applied statistics and analytics as well as data science, with work specializing in statistical computing and optimization. He is also the lead application developer.</span><br><br><br><br>
+<span style="font-size: larger;">**Nick Betzsold:** Nick is the lead decision analyst in recommending optimal theater screen utilization. His background is in applied statistics and analytics as well as data science, with work specializing in statistical computing and optimization. He is also the lead mobile application developer.</span><br><br><br><br>
 
 <img style="float: left;margin-left: 10px;margin-right: 10px" width="75" src = "Jeff.png">
 <span style="font-size: larger;">**Jeff Grobart:** Jeff is the project manager and co-lead for visualization and insights. Jeff has over 20+ years of project management experience overseeing a variety of projects valued up to \$30 million and holds a Masters in Data Science.</span><br><br><br><br>

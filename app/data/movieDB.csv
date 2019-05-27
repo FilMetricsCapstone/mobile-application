@@ -1,20 +1,74 @@
-film,startDate,endDate,runtime,addition
-Avengers: Endgame,2019-04-25,2019-06-19,181,30
-The White Crow,2019-04-26,2019-05-23,127,30
-Pokemon Detective Pikachu,2019-05-09,2019-07-03,104,20
-Poms,2019-05-10,2019-06-06,91,20
-Aladdin,2019-05-23,2019-07-17,128,30
-Booksmart,2019-05-24,2019-06-20,105,20
-Godzilla: King of the Monsters,2019-05-30,2019-07-24,132,30
-Rocketman,2019-05-31,2019-06-27,121,30
-X-Men: Dark Phoenix,2019-06-06,2019-07-31,113,20
-The Secret Life of Pets 2,2019-06-07,2019-07-04,86,20
-Toy Story 4,2019-06-20,2019-08-14,100,20
-Spider-Man: Far From Home,2019-07-02,2019-08-26,130,30
-Stuber,2019-07-12,2019-08-08,105,20
-Once Upon a Time in Hollywood,2019-07-26,2019-09-19,159,30
-Brian Banks,2019-08-09,2019-09-05,99,20
-Good Boys,2019-08-16,2019-09-12,95,20
-The Informer,2019-08-16,2019-09-12,113,20
-Blinded By the Light,2019-08-14,2019-09-10,114,20
-All Rise,2019-09-27,2019-10-24,98,20
+film,startDate,endDate,runtime,addition,popularity
+Avengers: Endgame,2019-04-25,2019-06-19,181,30,5
+The White Crow,2019-04-26,2019-05-23,127,30,1
+Pokemon Detective Pikachu,2019-05-09,2019-07-03,104,20,4
+Poms,2019-05-10,2019-06-06,91,20,2
+Aladdin,2019-05-23,2019-07-17,128,30,5
+Booksmart,2019-05-24,2019-06-20,105,20,3
+Godzilla: King of the Monsters,2019-05-30,2019-07-24,132,30,4
+Rocketman,2019-05-31,2019-06-27,121,30,3
+X-Men: Dark Phoenix,2019-06-06,2019-07-31,113,20,3
+The Secret Life of Pets 2,2019-06-07,2019-07-04,86,20,3
+Toy Story 4,2019-06-20,2019-08-14,100,20,4
+Midsommar,2019-07-03,2019-07-30,121,30,1
+Spider-Man: Far From Home,2019-07-02,2019-08-26,130,30,5
+Stuber,2019-07-12,2019-08-08,105,20,2
+21 Bridges,2019-07-12,2019-08-08,159,30,1
+Crawl,2019-07-12,2019-08-08,137,30,1
+The Lion King,2019-07-19,2019-09-12,108,20,5
+The Boy 2,2019-07-26,2019-08-22,150,30,2
+Once Upon a Time in Hollywood,2019-07-26,2019-09-19,159,30,3
+Dora and the Lost City of Gold,2019-07-31,2019-09-24,106,20,3
+Fast & Furious Presents: Hobbs & Shaw,2019-08-02,2019-09-26,114,20,5
+New Mutants,2019-08-02,2019-09-26,109,20,3
+Artemis Fowl,2019-08-09,2019-10-03,110,20,3
+Brian Banks,2019-08-09,2019-09-05,99,20,1
+The Kitchen,2019-08-09,2019-09-05,150,30,1
+Scary Stories to Tell in the Dark,2019-08-09,2019-09-05,123,30,2
+The Angry Birds Movie 2,2019-08-14,2019-09-10,115,20,3
+Blinded By the Light,2019-08-14,2019-09-10,114,20,1
+47 Meters Down: Uncaged,2019-08-16,2019-09-12,96,20,2
+Good Boys,2019-08-16,2019-09-12,95,20,2
+The Informer,2019-08-16,2019-09-12,113,20,1
+"Where'd You Go, Bernadette",2019-08-16,2019-09-12,111,20,1
+Angel has Fallen,2019-08-23,2019-09-19,103,20,1
+Overcomer,2019-08-23,2019-09-19,107,20,1
+Playmobil: The Movie,2019-08-30,2019-09-26,94,20,2
+It: Chapter 2,2019-09-06,2019-10-31,123,30,4
+The Goldfinch,2019-09-13,2019-10-10,130,30,2
+Hustlers,2019-09-13,2019-10-10,142,30,1
+Spies in Disguise,2019-09-13,2019-10-10,128,30,3
+Black and Blue,2019-09-20,2019-10-17,144,30,2
+Rambo: Last Blood,2019-09-20,2019-11-14,138,30,4
+Abominable,2019-09-27,2019-10-24,157,30,2
+All Rise,2019-09-27,2019-10-24,98,20,2
+The Art of Racing in the Rain,2019-09-27,2019-10-24,109,20,1
+Joker,2019-10-04,2019-11-28,155,30,3
+The Woman in the Window,2019-10-04,2019-10-31,123,30,1
+Gemini Man,2019-10-11,2019-12-05,122,30,3
+Zombiland 2: Double Tap,2019-10-11,2019-12-05,132,30,3
+The Addams Family,2019-10-18,2019-12-12,114,20,3
+The Hunt,2019-10-18,2019-11-14,111,20,1
+Maleficent: Mistress of Evil,2019-10-18,2019-12-12,98,20,4
+Bad Trip,2019-10-25,2019-11-21,103,20,2
+The Last Full Measure,2019-10-25,2019-11-21,102,20,1
+Arctic Dogs,2019-11-01,2019-11-28,113,20,2
+Motherless Brooklyn,2019-11-01,2019-11-28,157,30,1
+Terminator: Dark Fate,2019-11-01,2019-12-26,115,20,4
+Doctor Sleep,2019-11-08,2019-12-05,103,20,1
+Last Christmas,2019-11-08,2019-12-05,110,20,2
+Midway,2019-11-08,2019-12-05,107,20,1
+Charlie's Angels,2019-11-15,2020-01-09,106,20,3
+Ford v. Ferrari,2019-11-15,2019-12-12,90,20,1
+The Good Liar,2019-11-15,2019-12-12,114,20,1
+A Beatiful Day in the Neighborhood,2019-11-22,2019-12-19,148,30,2
+Frozen 2,2019-11-22,2020-01-16,103,20,5
+Rhythm Section,2019-11-22,2019-12-19,102,20,2
+Knives Out,2019-11-27,2019-12-24,157,30,3
+Queen & Slim,2019-11-27,2019-12-24,101,20,2
+Jumanji Sequel,2019-12-13,2020-02-06,148,30,4
+Cats,2019-12-20,2020-01-16,129,30,4
+Star Wars: The Rise of Skywalker,2019-12-20,2020-02-13,86,20,5
+Superintelligence,2019-12-20,2020-01-16,152,30,2
+The Call of the Wild,2019-12-25,2020-01-21,133,30,3
+Little Women,2019-12-25,2020-02-18,97,20,3
