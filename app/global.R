@@ -112,7 +112,7 @@ plotCompBarplot <- function(w, m, q, x) {
     datd <- dat[dat$type == "domestic",]
     g <- ggplot(datd, aes(x = time, y = gross)) +
       geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
-      xlab("") + ylab("Boxoffice Gross") + ggtitle("Glen Art Revenue Comparison") +
+      xlab("") + ylab("Box Office Gross") + ggtitle("Glen Art Revenue Comparison") +
       scale_y_continuous(labels = scales::dollar) +
       theme_bw() +
       scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
@@ -125,7 +125,7 @@ plotCompBarplot <- function(w, m, q, x) {
     dati <- dat[dat$type == "international",]
     g <- ggplot(dati, aes(x = time, y = gross)) +
       geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
-      xlab("") + ylab("Boxoffice Gross") +
+      xlab("") + ylab("Box Office Gross") +
       scale_y_continuous(labels = scales::dollar) +
       theme_bw() +
       scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
@@ -137,7 +137,7 @@ plotCompBarplot <- function(w, m, q, x) {
     datg <- dat[dat$type == "global",]
     g <- ggplot(datg, aes(x = time, y = gross)) +
       geom_bar(aes(fill = group), stat = "identity", position = position_dodge2()) +
-      xlab("") + ylab("Boxoffice Gross") +
+      xlab("") + ylab("Box Office Gross") +
       scale_y_continuous(labels = scales::dollar) +
       theme_bw() +
       scale_fill_manual(values = c("mediumpurple3", "lightsteelblue1"), name = "") +
@@ -149,19 +149,23 @@ plotCompBarplot <- function(w, m, q, x) {
   return(g)
 }
 
-plotMoviePareto <- function(dat) {
+plotMoviePareto <- function(dat, x) {
   # Manipulate data
   dat1 <- dat %>% dplyr::group_by(movie) %>%
     dplyr::summarize(gross = sum(gross)) %>%
     dplyr::filter(!is.na(gross)) %>% 
     dplyr::arrange(dplyr::desc(gross)) %>% 
-    dplyr::mutate(cp = cumsum(gross)/sum(gross), movie = factor(movie, levels = movie)) %>% 
-    dplyr::filter(signif(cp, 1) <= 0.8)
+    dplyr::mutate(cp = cumsum(gross)/sum(gross), movie = factor(movie, levels = movie))
+  if (x == "q") {
+    dat1 <- dat1 %>% dplyr::filter(signif(cp, 1) <= 0.75)
+  } else {
+    dat1 <- dat1 %>% dplyr::filter(signif(cp, 1) <= 0.8)
+  }
   
   # Plot
   g <- ggplot(dat1, aes(x = movie, y = gross)) +
     geom_bar(stat = "identity", fill = "mediumpurple3") +
-    xlab("Film") + ylab("Boxoffice Gross") + ggtitle("Top Performing Films") +
+    xlab("Film") + ylab("Box Office Gross") + ggtitle("Top Performing Films") +
     scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 20)) +
     scale_y_continuous(labels = scales::dollar) +
     theme_bw() +

@@ -22,6 +22,10 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       menuItem("About Us", tabName = "about", icon = icon("info-circle"))
     ),
     
+    # Link to Movie Search app
+    actionLink("movieSearch", HTML("&nbsp;&nbsp;Film Search"), icon = icon("new-window", lib = "glyphicon"),
+               onclick = "window.open('https://fmetricscapstone.appspot.com/', '_blank')"),
+    
     # Logo
     HTML('<footer><img src="logo.jpg" width="95%"</img> </footer>')
   ),

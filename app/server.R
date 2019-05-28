@@ -77,17 +77,17 @@ server <- function(input, output, session) {
   
   # Box 3 - Week
   output$moviesW <- renderPlot({
-    plotMoviePareto(wBO())
+    plotMoviePareto(wBO(), "w")
   })
   
   # Box 3 - Month
   output$moviesM <- renderPlot({
-    plotMoviePareto(mBO())
+    plotMoviePareto(mBO(), "m")
   })
   
   # Box 3 - Quarter
   output$moviesQ <- renderPlot({
-    plotMoviePareto(qBO())
+    plotMoviePareto(qBO(), "q")
   })
   
   #----- Analytics -----
@@ -145,11 +145,12 @@ server <- function(input, output, session) {
       )
       
       g <- ggplot(futureBO(), aes(x = Date, y = Total)) + geom_line(size = 2, color = "mediumpurple3") +
-        xlab("Date") + ylab("Projected Boxoffice Gross") +
+        xlab("Date") + ylab("Projected Box Office Gross") +
         scale_y_continuous(labels = scales::dollar) +
         theme_bw() +
         theme(axis.title = element_text(face = "bold", size = 16),
-              axis.text = element_text(size = 12))
+              axis.text = element_text(size = 12),
+              axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
       ggplotly(g)
     })
     
@@ -163,12 +164,13 @@ server <- function(input, output, session) {
       dat1$Film <- as.factor(dat1$Film)
       
       g <- ggplot(dat1, aes(x = Date, y = Gross, color = Film)) + geom_line(size = 2) +
-        xlab("Date") + ylab("Projected Boxoffice Gross") + 
+        xlab("Date") + ylab("Projected Box Office Gross") + 
         scale_y_continuous(labels = scales::dollar) +
         scale_color_manual(values = colFunc(length(unique(dat1$Film))), name = "") +
         theme_bw() +
         theme(axis.title = element_text(face = "bold", size = 16),
               axis.text = element_text(size = 12),
+              axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
               legend.title = element_blank(),
               legend.text = element_text(size = 10),
               legend.position = "top")
@@ -212,12 +214,13 @@ server <- function(input, output, session) {
     z <- data.frame(z, y, stringsAsFactors = FALSE)
       
     g <- ggplot(z, aes(x = x, y = y, color = w)) + geom_line(size = 2) +
-      xlab("Date") + ylab("Boxoffice Gross") + 
+      xlab("Date") + ylab("Box Office Gross") + 
       scale_y_continuous(labels = scales::dollar) +
       theme_bw() +
       scale_color_manual(values = c("lightsteelblue1", "mediumpurple3"), name = "") +
       theme(axis.title = element_text(face = "bold", size = 16),
             axis.text = element_text(size = 12),
+            axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
             legend.title = element_blank(),
             legend.text = element_text(size = 12),
             legend.position = "top")
