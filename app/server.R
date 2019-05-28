@@ -288,11 +288,21 @@ server <- function(input, output, session) {
       return()
     
     isolate({
+      if (length(input$schedFilms) == 0) {
+        showModal(
+          modalDialog(easyClose = TRUE, footer = modalButton("OK"),
+                      h2("Please select at least one film.", align = "center")
+          )
+        )
+      }
+      
+      validate(
+        need(length(input$schedFilms) > 0, "Please select at least one film.")
+      )
+      
       optimizeShowtimes(input$schedDate, input$firstShow, input$lastShow, input$interval, input$schedFilms, input$screens, input$allShown)
     })
   })
-  
-  
   
   observeEvent(optimalSched(), {
     yn <- length(unique(optimalSched()$content)) == length(input$schedFilms)*input$allShown
@@ -304,17 +314,10 @@ server <- function(input, output, session) {
              available screening window and the possible start times, one or more films
              could not meet the minimum number of occurrences constraint. Please click the
              information button for ways to work around this potential issue. The current
-             schedule as shown is optimal minus meeting this constraint."),
-          br(),
-          h5(HTML(
-            paste0("If these solutions do not work and the problem persists, please contact ",
-                   a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")
-            )
-          ), align = "center")
+             schedule as shown is optimal minus meeting this constraint.")
         )
       )
     }
-    
     
     output$optSchedule <- renderTimevis({
       timevis(data = optimalSched(), groups = groupsData,

@@ -225,158 +225,180 @@ getFutureBO <- function(pt, pd = NULL, pf) {
 }
 
 # Scheduler
-optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", lastShow = "00:30", interval = 5, filmList, screens = 4, allShown = 1) {
-  # Format date-times
-  firstShow <- paste(showDate, substr(strftime(firstShow, "%T"), 1, 5))
-  lastShow <- substr(strftime(lastShow, "%T"), 1, 5)
-  if (substr(lastShow,1,1) == 0) {
-    lastShow <- paste(ymd(showDate) + 1, lastShow)
-  } else {
-    lastShow <- paste(showDate, lastShow)
-  }
+runWIS <- function(shows) {
+  # Initialize maximum demand vector
+  d <- unname(shows[,"d"])
   
-  # Get screening window times
-  times <- seq.POSIXt(as.POSIXct(firstShow, tz="GMT"),
-                      as.POSIXct(lastShow, tz="GMT"), by = paste(interval, "min"))
-  screeningWindow <- 1:length(times); names(screeningWindow) <- substr(times, 1, 19); rm(times)
+  # Initialize list of movie start times to get demands in d
+  ind <- as.list(1:nrow(shows))
   
-  # Subset movieDB
-  films <- movieDB[movieDB$film %in% filmList,]
-  
-  # Movie durations
-  durations <- ceiling((films$runtime + films$addition)/interval)
-  
-  # Possible start and end times for each movie
-  showtimes <- c()
-  for (i in 1:length(durations)) {
-    s <- 1:(length(screeningWindow) - durations[i] + 1)
-    f <- s + durations[i] - 1
-    x <- cbind(s,f)
-    rownames(x) <- rep(films$film[i], nrow(x))
-    showtimes <- rbind(showtimes, x)
-  }
-  rm(f, i, s, x)
-  
-  # Add demand for movies at each start time (NEEDS TO GET REPLACED BY FORECASTING PIECE)
-  d <- sample(1:100, nrow(showtimes), replace = TRUE)
-  showtimes <- cbind(showtimes, d); rm(d)
-  
-  # Sort by finish time
-  showtimes <- showtimes[order(showtimes[,"f"]),]
-  
-  # Calculate showtimes with maximum demand
-  runWIS <- function(shows) {
-    # Initialize maximum demand vector
-    d <- unname(shows[,"d"])
-    
-    # Initialize list of movie start times to get demands in d
-    ind <- as.list(1:nrow(shows))
-    
-    # Calculate maximum demand
-    for (i in 2:nrow(shows)) {
-      d_i <- d[i]
-      ind_j <- c()
-      for (j in 1:(i-1)) {
-        if (shows[j,"f"] <= shows[i,"s"]) {
-          if(max(d[i], d[j] + shows[i,"d"]) > d_i) {
-            d_i <- max(d[i], d[j] + shows[i,"d"])
-            ind_j <- ind[[j]]
-          }
+  # Calculate maximum demand
+  for (i in 2:nrow(shows)) {
+    d_i <- d[i]
+    ind_j <- c()
+    for (j in 1:(i-1)) {
+      if (shows[j,"f"] <= shows[i,"s"]) {
+        if(max(d[i], d[j] + shows[i,"d"]) > d_i) {
+          d_i <- max(d[i], d[j] + shows[i,"d"])
+          ind_j <- ind[[j]]
         }
       }
-      d[i] <- d_i
-      ind[[i]] <- sort(c(ind[[i]], ind_j))
     }
-    rm(d_i, i, ind_j, j)
+    d[i] <- d_i
+    ind[[i]] <- sort(c(ind[[i]], ind_j))
+  }
+  rm(d_i, i, ind_j, j)
+  
+  out <- ind[[which.max(d)]]
+  return(out)
+}
+
+getIndSmallD <- function(df, n) {
+  df$d[df$content %in% n] <- NA
+  which.min(df$d)
+}
+
+optimizeShowtimes <- function(showDate = "2019-05-21", firstShow = "11:00", lastShow = "00:30", interval = 5, filmList, screens = 4, allShown = 1) {
+  withProgress(message = "Optimizing Showtimes", value = 0.1, {
     
-    out <- ind[[which.max(d)]]
-    return(out)
-  }
-  
-  optSchedule <- c()
-  for (i in 1:screens) {
-    ind <- runWIS(showtimes)
-    temp <- showtimes[ind,]
-    temp <- data.frame(content = rownames(temp),
-                       start = temp[,"s"],
-                       end = temp[,"f"],
-                       d = temp[,"d"],
-                       group = i, stringsAsFactors = FALSE)
-    optSchedule <- data.frame(rbind(optSchedule, temp), stringsAsFactors = FALSE)
-    showtimes <- showtimes[-ind,]
-  }
-  rm(i, ind, temp)
-  optSchedule <- data.frame(id = 1:nrow(optSchedule), optSchedule, stringsAsFactors = FALSE)
-  
-  # Check number of occurrences of each film
-  occurrences <- sapply(films$film, function(x) sum(x == optSchedule$content))
-  ind1 <- which(occurrences < allShown); ind2 <- which(occurrences <= allShown)
-  
-  # Number in each group
-  N <- c(0, unname(cumsum(table(optSchedule$group))))
-  
-  # Temporary copy of optSchedule
-  optSchedule1 <- list()
-  for (i in 1:(length(N)-1)) {
-    optSchedule1[[i]] <- optSchedule[(N[i]+1):N[i+1],]
-  }
-  
-  getIndSmallD <- function(df, n) {
-    df$d[df$content %in% n] <- NA
-    which.min(df$d)
-  }
-  
-  # Adjust schedule to meet number of shows constraint
-  ind_n <- c()
-  while (length(ind1) > 0) {
-    for (i in 1:length(ind1)) {
-      indSmallD <- sapply(optSchedule1, function(x) getIndSmallD(x, names(ind2)))
-      smallD <- sapply(optSchedule1, function(x) min(x$d[!(x$content %in% names(ind2))]))
-      st <- showtimes[rownames(showtimes)==names(ind1)[i],]
-      st <- data.frame(film = rownames(st),
-                       s = st[,"s"],
-                       f = st[,"f"],
-                       d = st[,"d"],
-                       stringsAsFactors = FALSE)
-      
-      f <- c(); s <- c()
-      for (j in 1:length(optSchedule1)) {
-        s <- c(s, ifelse(indSmallD[j]==1, 1, optSchedule1[[j]]$end[indSmallD[j]-1]))
-        f <- c(f, ifelse(indSmallD[j]==nrow(optSchedule1[[j]]), length(screeningWindow), optSchedule1[[j]]$start[indSmallD[j]+1]))
-      }
-      z <- data.frame(cbind(s,f))
-      d <- c(); ind <- c()
-      for (k in 1:nrow(z)) {
-        ind <- c(ind, ifelse(length(st[st$s >= z$s[k] & st$f <= z$f[k],"d"]) == 0, NA, which.max(st[st$s >= z$s[k] & st$f <= z$f[k],"d"])))
-        d <- c(d, ifelse(length(st[st$s >= z$s[k] & st$f <= z$f[k],"d"]) == 0, NA, max(st[st$s >= z$s[k] & st$f <= z$f[k],"d"])))
-      }
-      if (all(is.na(ind))) {
-        ind_n <- c(ind_n, names(ind1)[i])
-      } else {
-        new <- st[st$s >= z$s[which.min(smallD-d)] & st$f <= z$f[which.min(smallD-d)],][ind[which.min(smallD-d)],]
-        optSchedule1[[which.min(smallD-d)]][indSmallD[which.min(smallD-d)],2:5] <- new
-      }
-      
-      # Check number of occurrences of each film
-      occurrences <- rowSums(sapply(optSchedule1, function(x) sapply(films$film, function(y) sum(y == x$content))))
-      ind2 <- which(occurrences <= allShown)
+    incProgress(1/5, detail = "Determing all possible show times...")
+    # Format date-times
+    firstShow <- paste(showDate, substr(strftime(firstShow, "%T"), 1, 5))
+    lastShow <- substr(strftime(lastShow, "%T"), 1, 5)
+    if (substr(lastShow,1,1) == 0) {
+      lastShow <- paste(ymd(showDate) + 1, lastShow)
+    } else {
+      lastShow <- paste(showDate, lastShow)
     }
-    ind1 <- which(occurrences < allShown); ind1 <- ind1[!(names(ind1) %in% ind_n)]
-  }
-  temp <- c()
-  for (l in 1:length(optSchedule1)) {
-    temp <- rbind(temp, optSchedule1[[l]])
-  }
-  optSchedule1 <- temp; rm(temp)
-  optSchedule <- optSchedule1; rm(optSchedule1)
-  
-  optSchedule$start <- names(screeningWindow)[optSchedule$start]
-  optSchedule$end <- names(screeningWindow)[optSchedule$end]
-  
-  optSchedule$title <- paste(optSchedule$content, "\n",
-                             substr(optSchedule$start, 12, 16), "-", 
-                             substr(optSchedule$end, 12, 16), "\nDemand:",
-                             optSchedule$d)
-  
+    
+    # Get screening window times
+    times <- seq.POSIXt(as.POSIXct(firstShow, tz="GMT"),
+                        as.POSIXct(lastShow, tz="GMT"), by = paste(interval, "min"))
+    screeningWindow <- 1:length(times); names(screeningWindow) <- substr(times, 1, 19); rm(times)
+    
+    # Subset movieDB
+    films <- movieDB[movieDB$film %in% filmList,]
+    
+    # Movie durations
+    durations <- ceiling((films$runtime + films$addition)/interval)
+    
+    # Possible start and end times for each movie
+    showtimes <- c()
+    for (i in 1:length(durations)) {
+      s <- 1:(length(screeningWindow) - durations[i] + 1)
+      f <- s + durations[i] - 1
+      x <- cbind(s,f)
+      rownames(x) <- rep(films$film[i], nrow(x))
+      showtimes <- rbind(showtimes, x)
+    }
+    rm(f, i, s, x)
+    
+    incProgress(1/5, detail = "Calculating demand for each selected film...")
+    # Add demand for movies at each start time
+    inc <- (3/5-2/5)/nrow(showtimes)
+    d <- c()
+    for (i in 1:nrow(showtimes)) {
+      ge <- ifelse(films[films$film == rownames(showtimes)[i], "popularity"] == 5, rnorm(1, u1, s1),
+            ifelse(films[films$film == rownames(showtimes)[i], "popularity"] == 4, rnorm(1, u2, s2),
+            ifelse(films[films$film == rownames(showtimes)[i], "popularity"] == 3, rnorm(1, u3, s3),
+            ifelse(films[films$film == rownames(showtimes)[i], "popularity"] == 2, rnorm(1, u4, s4), rnorm(1, u5, s5)))))/400
+      
+      wk <- ceiling(as.numeric(as.duration(films[films$film == rownames(showtimes)[i], "startDate"] %--% showDate), "weeks"))
+      d <- c(d, ifelse(wk == 1, ge*dayMultiplier(wday(showDate))*0.304,
+                ifelse(wk == 2, ge*dayMultiplier(wday(showDate))*0.1875,
+                ifelse(wk == 3, ge*dayMultiplier(wday(showDate))*0.1284,
+                ifelse(wk == 4, ge*dayMultiplier(wday(showDate))*0.0944,
+                ifelse(wk == 5, ge*dayMultiplier(wday(showDate))*0.0713,
+                ifelse(wk == 6, ge*dayMultiplier(wday(showDate))*0.0615,
+                ifelse(wk == 7, ge*dayMultiplier(wday(showDate))*0.051, ge*dayMultiplier(wday(showDate))*0.0439))))))))
+      incProgress(inc, detail = "Calculating demand for each selected film...")
+    }
+    d <- round(d/max(d)*100, 1); showtimes <- cbind(showtimes, d); rm(d)
+    
+    # Sort by finish time
+    showtimes <- showtimes[order(showtimes[,"f"]),]
+    
+    incProgress(1/5, detail = "Running optimization algorithm...")
+    optSchedule <- c()
+    for (i in 1:screens) {
+      ind <- runWIS(showtimes)
+      temp <- showtimes[ind,]
+      temp <- data.frame(content = rownames(temp),
+                         start = temp[,"s"],
+                         end = temp[,"f"],
+                         d = temp[,"d"],
+                         group = i, stringsAsFactors = FALSE)
+      optSchedule <- data.frame(rbind(optSchedule, temp), stringsAsFactors = FALSE)
+      showtimes <- showtimes[-ind,]
+    }
+    rm(i, ind, temp)
+    optSchedule <- data.frame(id = 1:nrow(optSchedule), optSchedule, stringsAsFactors = FALSE)
+    
+    # Check number of occurrences of each film
+    occurrences <- sapply(films$film, function(x) sum(x == optSchedule$content))
+    ind1 <- which(occurrences < allShown); ind2 <- which(occurrences <= allShown)
+    
+    # Number in each group
+    N <- c(0, unname(cumsum(table(optSchedule$group))))
+    
+    # Temporary copy of optSchedule
+    optSchedule1 <- list()
+    for (i in 1:(length(N)-1)) {
+      optSchedule1[[i]] <- optSchedule[(N[i]+1):N[i+1],]
+    }
+    
+    incProgress(1/5, detail = "Checking if all constraints met...")
+    # Adjust schedule to meet number of shows constraint
+    ind_n <- c()
+    while (length(ind1) > 0) {
+      for (i in 1:length(ind1)) {
+        indSmallD <- sapply(optSchedule1, function(x) getIndSmallD(x, names(ind2)))
+        smallD <- sapply(optSchedule1, function(x) min(x$d[!(x$content %in% names(ind2))]))
+        st <- showtimes[rownames(showtimes)==names(ind1)[i],]
+        st <- data.frame(film = rownames(st),
+                         s = st[,"s"],
+                         f = st[,"f"],
+                         d = st[,"d"],
+                         stringsAsFactors = FALSE)
+        
+        f <- c(); s <- c()
+        for (j in 1:length(optSchedule1)) {
+          s <- c(s, ifelse(indSmallD[j]==1, 1, optSchedule1[[j]]$end[indSmallD[j]-1]))
+          f <- c(f, ifelse(indSmallD[j]==nrow(optSchedule1[[j]]), length(screeningWindow), optSchedule1[[j]]$start[indSmallD[j]+1]))
+        }
+        z <- data.frame(cbind(s,f))
+        d <- c(); ind <- c()
+        for (k in 1:nrow(z)) {
+          ind <- c(ind, ifelse(length(st[st$s >= z$s[k] & st$f <= z$f[k],"d"]) == 0, NA, which.max(st[st$s >= z$s[k] & st$f <= z$f[k],"d"])))
+          d <- c(d, ifelse(length(st[st$s >= z$s[k] & st$f <= z$f[k],"d"]) == 0, NA, max(st[st$s >= z$s[k] & st$f <= z$f[k],"d"])))
+        }
+        if (all(is.na(ind))) {
+          ind_n <- c(ind_n, names(ind1)[i])
+        } else {
+          new <- st[st$s >= z$s[which.min(smallD-d)] & st$f <= z$f[which.min(smallD-d)],][ind[which.min(smallD-d)],]
+          optSchedule1[[which.min(smallD-d)]][indSmallD[which.min(smallD-d)],2:5] <- new
+        }
+        
+        # Check number of occurrences of each film
+        occurrences <- rowSums(sapply(optSchedule1, function(x) sapply(films$film, function(y) sum(y == x$content))))
+        ind2 <- which(occurrences <= allShown)
+      }
+      ind1 <- which(occurrences < allShown); ind1 <- ind1[!(names(ind1) %in% ind_n)]
+    }
+    temp <- c()
+    for (l in 1:length(optSchedule1)) {
+      temp <- rbind(temp, optSchedule1[[l]])
+    }
+    optSchedule1 <- temp; rm(temp)
+    optSchedule <- optSchedule1; rm(optSchedule1)
+    
+    optSchedule$start <- names(screeningWindow)[optSchedule$start]
+    optSchedule$end <- names(screeningWindow)[optSchedule$end]
+    
+    optSchedule$title <- paste(optSchedule$content, "\n",
+                               substr(optSchedule$start, 12, 16), "-", 
+                               substr(optSchedule$end, 12, 16), "\nDemand:",
+                               optSchedule$d)
+  })
   return(optSchedule)
 }

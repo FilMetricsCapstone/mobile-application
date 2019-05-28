@@ -20,3 +20,5 @@
 
 <img style="float: left;margin-left: 10px;margin-right: 10px" width="75" src = "Suresh.png">
 <span style="font-size: larger;">**Suresh Subramanian:** Suresh is the co-lead for data metrics, visualization and insights. He has over 23 years of experience in data & analytics and brand management, and holds an MBA and Masters in Predictive Analytics.</span><br><br><br><br>
+
+_NOTE: FilMetrics as presented in this application is a fictitious company created for a school capstone project. No identification with actual companies is intended or should be inferred. No person or entity associated with this project received payment or anything of value, or entered into any agreement, in connection with the contrived scenario of consulting for Glen Art Theater, and we had no correspondence with the theater throughout this project. All data used are publicly available and any estimates were created from mathematical and statistical models._

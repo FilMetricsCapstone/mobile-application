@@ -75,9 +75,7 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       # This page...
       tabItem(tabName = "dashboard",
               div(actionButton("infoDashboard", label = "", icon = icon("info-circle")), align = "right"),
-              div(helpText(HTML(paste0("For assistance contact ",
-                                       a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
-                  align = "right"),
+              br(),
               fluidRow(
                 column(width = 6,
                   box(div(titlePanel("% Annual Sales Target to Date"), align = "center"),
@@ -106,9 +104,6 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       # This page...
       tabItem(tabName = "analytics",
         div(actionButton("infoAnalytics", label = "", icon = icon("info-circle")), align = "right"),
-        div(helpText(HTML(paste0("For assistance contact ",
-                                 a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
-            align = "right"),
         tabsetPanel(
           tabPanel(title = "Predictive",
             br(),
@@ -217,9 +212,6 @@ dashboardPage(title = "Glen Art Theater Analytics", skin = "purple", # Specifies
       # This page...
       tabItem(tabName = "scheduler",
         div(actionButton("infoScheduler", label = "", icon = icon("info-circle")), align = "right"),
-        div(helpText(HTML(paste0("For assistance contact ",
-                                 a("customersupport@filmetrics.com", href = "mailto:customersupport@filmetrics.com")))),
-            align = "right"),
         fluidRow(
           column(width = 3,
             box(title = "Theater Constraints", collapsible = TRUE, width = NULL, solidHeader = FALSE, status = "info",
